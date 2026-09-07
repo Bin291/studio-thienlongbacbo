@@ -248,10 +248,43 @@ function extractJsFromMarkdown(mdText) {
   return clean;
 }
 
+function removeVietnameseTones(str) {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+
+function generateSafeFilename(rawTitle, defaultName = 'bo-giap-armor') {
+  if (!rawTitle || typeof rawTitle !== 'string') return defaultName;
+
+  // 1. Loại bỏ markdown formatting (#, *, `, _)
+  let clean = rawTitle.replace(/^#+\s*/, '').replace(/[*_`]/g, '').trim();
+
+  // 2. Bỏ các emoji hoặc icon ký tự đặc biệt ở đầu (như ⭐, 🛡️, ...)
+  clean = clean.replace(/^[\p{Emoji}\p{Symbol}\s]+/u, '').trim();
+
+  // 3. Chuẩn hóa tiếng Việt có dấu -> không dấu để tương thích 100% mọi OS (Windows/Linux/macOS)
+  const noTone = removeVietnameseTones(clean);
+
+  // 4. Thay thế ký tự đặc biệt thành dấu gạch nối
+  let slug = noTone
+    .replace(/[^a-zA-Z0-9\s-_]/g, ' ')
+    .trim()
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+
+  return slug || defaultName;
+}
+
 function extractTitleFromMarkdown(mdText) {
   if (!mdText) return 'Bộ Giáp Tùy Chỉnh';
-  const titleMatch = mdText.match(/^#\s+(.+)$/m);
-  return titleMatch ? titleMatch[1].trim() : 'Bộ Giáp Tùy Chỉnh';
+  const titleMatch = mdText.match(/^#+\s*(.+)$/m);
+  return titleMatch ? titleMatch[1].replace(/[*_`]/g, '').trim() : 'Bộ Giáp Tùy Chỉnh';
 }
 
 // Helper hàm cơ bản
@@ -798,17 +831,55 @@ window.addEventListener('drop', (e) => {
 const btnExport = document.getElementById('btn-export-md');
 if (btnExport) {
   btnExport.addEventListener('click', () => {
-    const content = editorEl ? editorEl.value : '';
-    const title = (extractTitleFromMarkdown(content) || 'armor-set')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-');
+    let content = '';
+    if (activeTab === 'js' && editorEl) {
+      if (editorEl.dataset.mdContent) {
+        const currentJs = editorEl.value;
+        const md = editorEl.dataset.mdContent;
+        if (/```(?:javascript|js)\s*[\s\S]*?```/i.test(md)) {
+          content = md.replace(/```(?:javascript|js)\s*[\s\S]*?```/i, '```javascript\n' + currentJs + '\n```');
+        } else {
+          content = md + '\n\n```javascript\n' + currentJs + '\n```';
+        }
+      } else {
+        const title = activeArmorBuilders?.name || 'Bộ Giáp Tùy Chỉnh';
+        content = `# ${title}\n\n\`\`\`javascript\n${editorEl.value}\n\`\`\``;
+      }
+    } else {
+      content = editorEl ? editorEl.value : '';
+    }
+
+    if (!content.trim()) {
+      alert('⚠️ Không có nội dung markdown để xuất!');
+      return;
+    }
+
+    let rawTitle = extractTitleFromMarkdown(content);
+    if (!rawTitle || rawTitle === 'Bộ Giáp Tùy Chỉnh') {
+      if (activeArmorBuilders?.name) {
+        rawTitle = activeArmorBuilders.name;
+      } else {
+        const selPreset = document.getElementById('sel-preset');
+        if (selPreset && selPreset.selectedIndex > 0) {
+          rawTitle = selPreset.options[selPreset.selectedIndex].text;
+        }
+      }
+    }
+
+    const safeName = generateSafeFilename(rawTitle, 'bo-giap-armor');
+    const filename = `${safeName}.md`;
+
     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${title}.md`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
+
+    const statusEl = document.getElementById('status-text');
+    if (statusEl) {
+      statusEl.textContent = `✅ Đã xuất file thành công: ${filename}`;
+    }
   });
 }
 
