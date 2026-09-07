@@ -71,8 +71,11 @@ export function piece(mats) {
       emit(matKey, new THREE.CylinderGeometry(rTop, rBot, h, opts?.seg ?? 12), pos, opts?.rot);
       return api;
     },
-    torus(matKey, r, tube, pos, opts) {
-      emit(matKey, new THREE.TorusGeometry(r, tube, 6, opts?.seg ?? 14), pos, opts?.rot);
+    torus(matKey, r, tube, pos, opts) { emit(matKey, new THREE.TorusGeometry(r, tube, 6, opts?.seg ?? 14), pos, opts?.rot); return api; },
+    // KHỐI CẦU (nguyên) hoặc VÒM CẦU (thetaLength < PI) — MẶT CONG THẬT (không bát giác như slab), dùng
+    // cho vai/khớp tròn cần "1 khối cong xuống" thay vì nhiều tấm vát chồng (tránh nhìn "cục xếp bí").
+    sphere(matKey, r, pos, opts) {
+      emit(matKey, new THREE.SphereGeometry(r, opts?.seg ?? 14, opts?.segV ?? 10, opts?.phiStart ?? 0, opts?.phiLength ?? Math.PI * 2, opts?.thetaStart ?? 0, opts?.thetaLength ?? Math.PI), pos, opts?.rot);
       return api;
     },
 
