@@ -20,7 +20,7 @@ let antiClipEnabled = true;
 const canvas = document.getElementById('c3d');
 const wrap = document.getElementById('drop-target');
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
@@ -809,6 +809,80 @@ if (btnExport) {
     a.download = `${title}.md`;
     a.click();
     URL.revokeObjectURL(a.href);
+  });
+}
+
+// Chụp tất cả các góc và lưu vào project screenshots/<N>/
+const btnSnapAll = document.getElementById('btn-snap-all');
+if (btnSnapAll) {
+  btnSnapAll.addEventListener('click', async () => {
+    try {
+      btnSnapAll.disabled = true;
+      const originalText = btnSnapAll.textContent;
+      btnSnapAll.textContent = '⏳ Đang chụp...';
+      const statusEl = document.getElementById('status-text');
+      if (statusEl) statusEl.textContent = 'Đang chụp 9 góc nhìn nhân vật...';
+
+      // Lưu góc máy hiện tại
+      const origCamPos = camera.position.clone();
+      const origTarget = controls.target.clone();
+
+      const dist = 3.8;
+      const ty = 0.52;
+      const angles = [
+        { name: '01_chinh_dien.png', pos: [0, ty, dist], target: [0, ty, 0] },
+        { name: '02_goc_3_4_truoc.png', pos: [dist * 0.65, ty + 0.35, dist * 0.75], target: [0, ty, 0] },
+        { name: '03_hong_phai.png', pos: [dist, ty, 0.001], target: [0, ty, 0] },
+        { name: '04_goc_3_4_sau.png', pos: [dist * 0.65, ty + 0.35, -dist * 0.75], target: [0, ty, 0] },
+        { name: '05_mat_sau.png', pos: [0, ty, -dist], target: [0, ty, 0] },
+        { name: '06_hong_trai.png', pos: [-dist, ty, 0.001], target: [0, ty, 0] },
+        { name: '07_can_canh_mu.png', pos: [0, 0.85, 1.25], target: [0, 0.82, 0] },
+        { name: '08_can_canh_ao.png', pos: [0, 0.52, 1.6], target: [0, 0.50, 0] },
+        { name: '09_can_canh_giay.png', pos: [0, 0.22, 1.8], target: [0, 0.20, 0] },
+      ];
+
+      const images = [];
+      for (const a of angles) {
+        camera.position.set(...a.pos);
+        controls.target.set(...a.target);
+        controls.update();
+        renderer.render(scene, camera);
+        images.push({
+          name: a.name,
+          data: renderer.domElement.toDataURL('image/png'),
+        });
+      }
+
+      // Khôi phục góc máy ban đầu
+      camera.position.copy(origCamPos);
+      controls.target.copy(origTarget);
+      controls.update();
+      renderer.render(scene, camera);
+
+      // Gửi về server lưu vào screenshots/<N>/
+      const resp = await fetch('/api/save-screenshots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images }),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Server responded with status ${resp.status}`);
+      }
+
+      const res = await resp.json();
+      btnSnapAll.disabled = false;
+      btnSnapAll.textContent = originalText;
+
+      const msg = `✅ Đã chụp thành công ${res.count} góc ảnh!\n📁 Thư mục lưu: ${res.relPath}\n(Toàn bộ đường dẫn: ${res.fullPath})`;
+      if (statusEl) statusEl.textContent = `✅ Đã lưu ${res.count} ảnh vào ${res.relPath}`;
+      alert(msg);
+    } catch (err) {
+      console.error('Lỗi khi chụp ảnh full góc:', err);
+      btnSnapAll.disabled = false;
+      btnSnapAll.textContent = '📸 Chụp full góc';
+      alert('❌ Lỗi khi chụp hoặc lưu ảnh: ' + err.message);
+    }
   });
 }
 

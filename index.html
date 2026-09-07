@@ -101,6 +101,7 @@
   <!-- ════════════════ CỘT PHẢI: IMPORT MD & CODE EDITOR ════════════════ -->
   <div class="sidebar">
     <div class="sb-header">
+      <!-- Dòng 1: Tiêu đề & Nút nạp / áp dụng -->
       <div class="sb-row">
         <div class="sb-title">
           <span>📄</span>
@@ -108,23 +109,28 @@
         </div>
         <div class="btn-group">
           <input type="file" id="file-input" accept=".md,.markdown,.js,.txt" style="display:none">
-          <button class="btn btn-secondary" id="btn-browse-md">📂 Nạp file .md</button>
+          <button class="btn btn-secondary" id="btn-browse-md">📂 Nạp file</button>
           <button class="btn btn-primary" id="btn-apply-code">▶ Áp dụng (F5)</button>
         </div>
       </div>
+
+      <!-- Dòng 2: Bộ mẫu game chiếm trọn dòng -->
+      <div class="sb-row" style="gap: 8px;">
+        <span style="color:var(--text-dim);font-size:12px;white-space:nowrap;">Bộ mẫu:</span>
+        <select id="sel-preset" style="flex:1;min-width:0;width:100%;background:#0d1117;border:1px solid var(--panel-border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer;">
+          <option value="">-- Chọn bộ mẫu có sẵn --</option>
+          <option value="golden_turtle" selected>⭐ Mẫu 1: Giáp Kim Quy Hoàng Triều (Full Set)</option>
+          <option value="black_tortoise">⭐ Mẫu 2: Giáp Huyền Vũ Chiến Thần (Full Set)</option>
+          <option value="viper_shadow">Bóng Đêm Rắn Độc (Viper's Shadow - armorKit)</option>
+          <option value="forest_boar">Chiến Binh Heo Rừng (Forest Boar v2)</option>
+          <option value="wind_feather">Xạ Vệ Lông Vũ (Wind Feather)</option>
+          <option value="carbon_warrior">Thiết Sĩ Carbonium (Rarity 1)</option>
+        </select>
+      </div>
+
+      <!-- Dòng 3: Nút chụp ảnh full góc + Hướng dẫn + Xuất md -->
       <div class="sb-row">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="color:var(--text-dim);font-size:12px;">Bộ mẫu game:</span>
-          <select id="sel-preset" style="background:#0d1117;border:1px solid var(--panel-border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:12px;">
-            <option value="">-- Chọn bộ mẫu có sẵn --</option>
-            <option value="golden_turtle" selected>⭐ Mẫu 1: Giáp Kim Quy Hoàng Triều (Full Set)</option>
-            <option value="black_tortoise">⭐ Mẫu 2: Giáp Huyền Vũ Chiến Thần (Full Set)</option>
-            <option value="viper_shadow">Bóng Đêm Rắn Độc (Viper's Shadow - armorKit)</option>
-            <option value="forest_boar">Chiến Binh Heo Rừng (Forest Boar v2)</option>
-            <option value="wind_feather">Xạ Vệ Lông Vũ (Wind Feather)</option>
-            <option value="carbon_warrior">Thiết Sĩ Carbonium (Rarity 1)</option>
-          </select>
-        </div>
+        <button class="btn btn-success" id="btn-snap-all" title="Tự động xoay và chụp toàn bộ các góc của giáp, lưu vào thư mục screenshots/1/, 2/...">📸 Chụp full góc</button>
         <div class="btn-group">
           <button class="btn btn-secondary" id="btn-open-guide" title="Xem hướng dẫn JS trích xuất và cách chống lộ da">📖 Hướng Dẫn</button>
           <button class="btn btn-secondary" id="btn-export-md" title="Tải file .md này về">💾 Xuất .md</button>

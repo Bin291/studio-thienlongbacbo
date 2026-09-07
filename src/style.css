@@ -47,6 +47,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   pointer-events: none;
 }
 .vp-title {
@@ -59,6 +61,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 .vp-title h1 { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
 .vp-title .badge {
@@ -72,7 +75,9 @@ body {
 
 .cam-presets {
   display: flex;
-  gap: 5px;
+  gap: 4px;
+  flex-wrap: wrap;
+  max-width: 100%;
   background: rgba(22, 27, 34, 0.88);
   backdrop-filter: blur(8px);
   border: 1px solid var(--panel-border);
