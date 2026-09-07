@@ -5,6 +5,7 @@ import { DEFAULT_APPEARANCE, BODY_SLIDERS } from './appearance.js';
 import { piece } from './armorKit.js';
 import { applyArmorTexturesToCharacter, clearArmorTexturesFromCharacter, TEXTURE_THEMES } from './armorTexture.js';
 import guideMd from '../templates/HUONG-DAN-JS-TRICH-XUAT.md?raw';
+import JSZip from 'jszip';
 
 // ════════════════ 1. KHỞI TẠO BIẾN TRẠNG THÁI (ĐẶT ĐẦU FILE TRÁNH TDZ) ════════════════
 let activeArmorBuilders = null; // { head, body, hands, legs, pal, name }
@@ -930,29 +931,56 @@ if (btnSnapAll) {
       controls.update();
       renderer.render(scene, camera);
 
-      // Gửi về server lưu vào screenshots/<N>/
-      const resp = await fetch('/api/save-screenshots', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images }),
-      });
+      // 1. Đóng gói toàn bộ 9 ảnh góc nhìn vào file ZIP bằng JSZip
+      let currentTitle = activeArmorBuilders?.name || '';
+      if (!currentTitle) {
+        const editor = document.getElementById('md-editor');
+        if (editor?.value) currentTitle = extractTitleFromMarkdown(editor.value);
+      }
+      const safeArmorName = generateSafeFilename(currentTitle, 'armor-set');
+      const zipFileName = `${safeArmorName}-screenshots.zip`;
 
-      if (!resp.ok) {
-        throw new Error(`Server responded with status ${resp.status}`);
+      const zip = new JSZip();
+      const folder = zip.folder(safeArmorName);
+      for (const img of images) {
+        const base64Data = img.data.replace(/^data:image\/\w+;base64,/, '');
+        folder.file(img.name, base64Data, { base64: true });
       }
 
-      const res = await resp.json();
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(zipBlob);
+      a.download = zipFileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      // 2. Lưu dự phòng vào thư mục screenshots/<N>/ trên local server nếu có
+      let serverSavedPath = '';
+      try {
+        const resp = await fetch('/api/save-screenshots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ images }),
+        });
+        if (resp.ok) {
+          const res = await resp.json();
+          if (res?.relPath) serverSavedPath = res.relPath;
+        }
+      } catch (_) {
+        // Tương thích khi deploy trên Vercel / GitHub Pages (không có backend local)
+      }
+
       btnSnapAll.disabled = false;
       btnSnapAll.textContent = originalText;
 
-      const msg = `✅ Đã chụp thành công ${res.count} góc ảnh!\n📁 Thư mục lưu: ${res.relPath}\n(Toàn bộ đường dẫn: ${res.fullPath})`;
-      if (statusEl) statusEl.textContent = `✅ Đã lưu ${res.count} ảnh vào ${res.relPath}`;
+      const msg = `✅ Đã chụp và đóng gói ${images.length} góc ảnh!\n📦 Đã tải file nén: ${zipFileName}${serverSavedPath ? `\n📁 Đồng thời lưu thư mục: ${serverSavedPath}` : ''}`;
+      if (statusEl) statusEl.textContent = `✅ Đã tải file ZIP: ${zipFileName} (${images.length} góc ảnh)`;
       alert(msg);
     } catch (err) {
       console.error('Lỗi khi chụp ảnh full góc:', err);
       btnSnapAll.disabled = false;
       btnSnapAll.textContent = '📸 Chụp full góc';
-      alert('❌ Lỗi khi chụp hoặc lưu ảnh: ' + err.message);
+      alert('❌ Lỗi khi chụp hoặc đóng gói file ZIP: ' + err.message);
     }
   });
 }
