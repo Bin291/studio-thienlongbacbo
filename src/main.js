@@ -1001,8 +1001,54 @@ window.addEventListener('drop', (e) => {
   }
 });
 
-// Xuất file .md
+// ════════════════ MODAL & LOGIC XUẤT FILE .MD ════════════════
 const btnExport = document.getElementById('btn-export-md');
+const exportModal = document.getElementById('export-modal');
+const exportInput = document.getElementById('export-filename-input');
+const btnConfirmExport = document.getElementById('btn-confirm-export');
+const btnCancelExport = document.getElementById('btn-cancel-export');
+
+let pendingExportContent = '';
+
+function closeExportModal() {
+  if (exportModal) exportModal.style.display = 'none';
+  pendingExportContent = '';
+}
+
+function triggerDownloadExport() {
+  if (!pendingExportContent) {
+    closeExportModal();
+    return;
+  }
+
+  let customName = exportInput ? exportInput.value.trim() : '';
+  // Bỏ đuôi .md nếu người dùng gõ thêm
+  customName = customName.replace(/\.md$/i, '').trim();
+
+  // Loại bỏ các ký tự cấm của hệ điều hành trong tên file (\ / : * ? " < > |)
+  customName = customName.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+
+  if (!customName) {
+    customName = 'bo-giap-armor';
+  }
+
+  const filename = `${customName}.md`;
+
+  const blob = new Blob([pendingExportContent], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  closeExportModal();
+
+  const statusEl = document.getElementById('status-text');
+  if (statusEl) {
+    statusEl.textContent = `✅ Đã xuất file thành công: ${filename}`;
+  }
+}
+
 if (btnExport) {
   btnExport.addEventListener('click', () => {
     let content = '';
@@ -1028,6 +1074,8 @@ if (btnExport) {
       return;
     }
 
+    pendingExportContent = content;
+
     let rawTitle = extractTitleFromMarkdown(content);
     if (!rawTitle || rawTitle === 'Bộ Giáp Tùy Chỉnh') {
       if (activeArmorBuilders?.name) {
@@ -1041,21 +1089,56 @@ if (btnExport) {
     }
 
     const safeName = generateSafeFilename(rawTitle, 'bo-giap-armor');
-    const filename = `${safeName}.md`;
 
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-
-    const statusEl = document.getElementById('status-text');
-    if (statusEl) {
-      statusEl.textContent = `✅ Đã xuất file thành công: ${filename}`;
+    if (exportModal && exportInput) {
+      exportInput.value = safeName;
+      exportModal.style.display = 'flex';
+      setTimeout(() => {
+        exportInput.focus();
+        exportInput.select();
+      }, 50);
+    } else {
+      // Fallback nếu modal không tồn tại
+      pendingExportContent = content;
+      triggerDownloadExport();
     }
   });
 }
+
+if (btnConfirmExport) {
+  btnConfirmExport.addEventListener('click', triggerDownloadExport);
+}
+
+if (btnCancelExport) {
+  btnCancelExport.addEventListener('click', closeExportModal);
+}
+
+if (exportInput) {
+  exportInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      triggerDownloadExport();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeExportModal();
+    }
+  });
+}
+
+if (exportModal) {
+  exportModal.addEventListener('click', (e) => {
+    if (e.target === exportModal) {
+      closeExportModal();
+    }
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && exportModal && exportModal.style.display !== 'none') {
+    closeExportModal();
+  }
+});
+
 
 // Chụp tất cả các góc và lưu vào project screenshots/<N>/
 const btnSnapAll = document.getElementById('btn-snap-all');

@@ -173,6 +173,31 @@
     </div>
   </div>
 
+  <!-- Modal đặt tên file xuất Markdown (.md) -->
+  <div id="export-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>💾</span>
+        <span>Đặt Tên File Xuất (.md)</span>
+      </div>
+      <p class="modal-desc">
+        Chỉnh sửa tên file lưu về máy theo ý muốn của bạn:
+      </p>
+      <div class="modal-input-group">
+        <input type="text" id="export-filename-input" class="modal-input" spellcheck="false" placeholder="ten-bo-giap" />
+        <span class="modal-ext">.md</span>
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: -4px;">
+        <span>💡 Nhấn <b>Enter</b> để tải về ngay</span>
+        <span><b>Esc</b> để hủy</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btn-cancel-export">Hủy bỏ</button>
+        <button class="btn btn-primary" id="btn-confirm-export">💾 Tải về máy</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
