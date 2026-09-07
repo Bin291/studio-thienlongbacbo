@@ -73,11 +73,13 @@ Một file Markdown hợp lệ gồm:
 ### Cấu Trúc Hàm Builder:
 Mỗi hàm builder có chữ ký:
 ```js
-export function <tênMón>(w, h, d, pal, slot) {
+export function tenMon(w, h, d, pal, slot) {
   // w, h, d: Chiều ngang, chiều cao, chiều sâu của mesh neo
   // pal: Bảng màu { base, dark, trim, steel, ... }
   // slot: Nhãn phân đoạn ('torso', 'upperArm', 'forearm', 'thigh', 'shin', 'foot')
-  return group; // Trả về một THREE.Group
+  const b = piece(M(pal));
+  // ... code dựng các khối giáp ở đây ...
+  return b.build(); // Trả về một THREE.Group
 }
 ```
 
@@ -92,36 +94,38 @@ File Markdown được hỗ trợ sẵn bộ kit tạo hình `armorKit` hiện �
 
 ### Các hàm API chính trong `armorKit`:
 ```js
-const b = piece(MATS); // MATS: { tênVậtLiệu: { color, metalness, roughness, emissive? } }
+function viDu(w, h, d, pal) {
+  const b = piece(M(pal));
 
-// 1. Tấm vát cạnh (nguyên thuỷ chính)
-b.slab(matKey, w, h, d, [x, y, z], { ch, rot });
+  // 1. Tấm vát cạnh (nguyên thuỷ chính)
+  b.slab('gold', w, h, d, [0, 0, 0], { ch: h * 0.05, rot: [0, 0, 0] });
 
-// 2. Tấm trùm kín một đoạn cơ thể (tự tính góc vát an toàn không lộ da)
-b.cover(matKey, w, h, d, kx, ky, kz, [x, y, z]);
+  // 2. Tấm trùm kín một đoạn cơ thể (tự tính góc vát an toàn không lộ da)
+  b.cover('plate', w, h, d, 1.15, 1.05, 1.20, [0, 0, 0]);
 
-// 3. Khối cầu / Bán cầu vòm mượt mà (MỚI 2026-09-08)
-b.sphere(matKey, radius, [x, y, z], { rot, thetaLength: Math.PI * 0.5 });
+  // 3. Khối cầu / Bán cầu vòm mượt mà (MỚI 2026-09-08)
+  b.sphere('gold', w * 0.35, [0, h * 0.45, 0], { thetaLength: Math.PI * 0.5 });
 
-// 4. Chồng bậc thang (dùng cho mũ, cổ găng, cổ ủng, tà giáp)
-b.bandStack(matKey, { w, h, d, y, z, count: 4, taper: 0.05, trim: 'trimMat' });
+  // 4. Chồng bậc thang (dùng cho mũ, cổ găng, cổ ủng, tà giáp)
+  b.bandStack('plate', { w: w * 1.15, h: h * 0.8, d: d * 1.2, y: 0, count: 4, taper: 0.05, trim: 'copper' });
 
-// 5. Khung viền kim loại ôm quanh 1 mặt phẳng
-b.frame(matKey, w, h, z, { t, d, x, y });
+  // 5. Khung viền kim loại ôm quanh 1 mặt phẳng
+  b.frame('copper', w, h, d * 0.5, { t: w * 0.05, d: 0.05, x: 0, y: 0 });
 
-// 6. Dựng đối xứng 2 bên (Trái x=-1, Phải x=1)
-b.both((sx) => {
-  b.slab(matKey, w * 0.4, h * 0.2, d, [sx * w * 0.6, y, z]);
-});
+  // 6. Dựng đối xứng 2 bên (Trái x=-1, Phải x=1)
+  b.both((sx) => {
+    b.slab('plate', w * 0.4, h * 0.2, d, [sx * w * 0.6, 0, 0]);
+  });
 
-// 7. Chi tiết phụ trợ
-b.belt(leatherMat, buckleMat, { w, h, d, y }); // Đai thắt lưng
-b.pouch(leatherMat, metalMat, w, h, d, pos);   // Túi đeo hông/đùi
-b.ropeCoil(ropeMat, hookMat, r, pos, rot);      // Cuộn dây thừng + móc
-b.cyl(matKey, rTop, rBot, h, pos, opts);       // Hình trụ (chốt tròn, la bàn)
-b.box(matKey, w, h, d, pos, opts);             // Khối hộp nhỏ (đinh tán)
+  // 7. Chi tiết phụ trợ
+  b.belt('leather', 'copper', { w: w * 1.15, h: h * 0.15, d: d * 1.15, y: -h * 0.5 }); // Đai thắt lưng
+  b.pouch('leather', 'copper', w * 0.3, h * 0.25, d * 0.15, [w * 0.5, 0, 0]);           // Túi đeo hông/đùi
+  b.ropeCoil('leather', 'steel', w * 0.2, [0, 0, 0]);                                   // Cuộn dây thừng + móc
+  b.cyl('steel', w * 0.1, w * 0.1, h * 0.2, [0, 0, 0]);                                  // Hình trụ (chốt tròn, la bàn)
+  b.box('steel', w * 0.08, h * 0.08, d * 0.08, [0, 0, 0]);                               // Khối hộp nhỏ (đinh tán)
 
-return b.build(); // Trả về THREE.Group đã gộp mesh hoàn chỉnh
+  return b.build(); // Trả về THREE.Group đã gộp mesh hoàn chỉnh
+}
 ```
 
 ---

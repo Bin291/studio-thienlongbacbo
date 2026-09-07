@@ -310,27 +310,53 @@ rebuildCharacter();
 // ════════════════ 5. PARSER VÀ BIÊN DỊCH MÃ MARKDOWN ════════════════
 function extractJsFromMarkdown(mdText) {
   if (!mdText) return '';
-  // 1. Thử tìm khối ```javascript hoặc ```js
-  const codeBlockRegex = /```(?:javascript|js)\s*([\s\S]*?)```/gi;
+
+  // 1. Tìm tất cả các khối ```javascript hoặc ```js trên dòng riêng
+  const codeBlockRegex = /(?:^|\n)```(?:javascript|js)\s*\n([\s\S]*?)\n```/gi;
   let match;
-  const codeChunks = [];
+  const allBlocks = [];
   while ((match = codeBlockRegex.exec(mdText)) !== null) {
-    codeChunks.push(match[1].trim());
-  }
-  if (codeChunks.length > 0) {
-    return codeChunks.join('\n\n');
+    const chunk = match[1].trim();
+    if (chunk) allBlocks.push(chunk);
   }
 
-  // 2. Thử tìm khối ``` bất kỳ
-  const genericBlockRegex = /```\s*([\s\S]*?)```/gi;
-  while ((match = genericBlockRegex.exec(mdText)) !== null) {
-    codeChunks.push(match[1].trim());
-  }
-  if (codeChunks.length > 0) {
-    return codeChunks.join('\n\n');
+  // 2. Thử tìm khối ``` bất kỳ nếu chưa thấy js block
+  if (allBlocks.length === 0) {
+    const genericBlockRegex = /(?:^|\n)```[a-z]*\s*\n([\s\S]*?)\n```/gi;
+    while ((match = genericBlockRegex.exec(mdText)) !== null) {
+      const chunk = match[1].trim();
+      if (chunk) allBlocks.push(chunk);
+    }
   }
 
-  // 3. Nếu người dùng dán code thuần nhưng có dính ``` ở đầu hoặc cuối
+  if (allBlocks.length > 0) {
+    // Kiểm tra xem có khối nào chứa định nghĩa hàm giáp thật sự không
+    const isArmorBlock = (code) => {
+      return /\b(function\s+(?:head|body|legs|feet|hands|buildHead|buildChest|buildWarrior|buildAssassin|buildArcher)|export\s+const\s+[A-Z_]+\s*=\s*\{)/.test(code);
+    };
+
+    const armorBlocks = allBlocks.filter(isArmorBlock);
+    if (armorBlocks.length > 0) {
+      // Ưu tiên khối chứa định nghĩa giáp hoàn chỉnh
+      return armorBlocks.join('\n\n');
+    }
+
+    // Nếu không có khối nào chứa hàm giáp hoàn chỉnh, kiểm tra xem có code Three.js chạy được không
+    const hasExecutableCode = allBlocks.some((b) => /\b(piece|THREE|box|glow)\b/.test(b) && !b.includes('<tênMón>'));
+    if (!hasExecutableCode) {
+      return ''; // Tài liệu hướng dẫn thuần túy
+    }
+    return allBlocks.join('\n\n');
+  }
+
+  // 3. Nếu không có khối code block nào:
+  // Kiểm tra xem có phải là code JS thuần do người dùng dán vào không
+  const hasArmorFns = /\b(function\s+(?:head|body|legs|feet|hands|build)|export\s+function|export\s+const)\b/.test(mdText);
+  if (!hasArmorFns) {
+    // Không phải code giáp, chỉ là văn bản markdown thông thường
+    return '';
+  }
+
   let clean = mdText.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
   return clean;
 }
@@ -416,6 +442,14 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
   errBox.style.display = 'none';
   errBox.textContent = '';
 
+  // 0. Nếu không có code JS (ví dụ file markdown tài liệu, hướng dẫn đọc)
+  if (!userJs || !userJs.trim()) {
+    statusDot.className = 'dot';
+    statusText.textContent = `Đã mở tài liệu: ${armorName} (Chế độ xem tài liệu / Hướng dẫn)`;
+    document.getElementById('active-set-badge').textContent = armorName;
+    return;
+  }
+
   try {
     // 1. Dọn dẹp câu lệnh import và export
     let cleanCode = userJs
@@ -427,12 +461,27 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
       .replace(/```/g, '')
       .trim();
 
-    // Chuyển đổi các dòng tiêu đề markdown (# ...) hoặc trích dẫn (> ...) thành comment để tránh lỗi cú pháp JS
+    // Chuyển đổi TẤT CẢ các dòng markdown, ghi chú, gạch đầu dòng thành comment để không bao giờ lỗi cú pháp
     cleanCode = cleanCode
       .split('\n')
       .map((line) => {
         const t = line.trim();
-        if (t.startsWith('#') || t.startsWith('---') || t.startsWith('***') || t.startsWith('>')) {
+        if (
+          t.startsWith('#') ||
+          t.startsWith('---') ||
+          t.startsWith('***') ||
+          t.startsWith('___') ||
+          t.startsWith('>') ||
+          t.startsWith('**') ||
+          t.startsWith('*') ||
+          t.startsWith('-') ||
+          t.startsWith('+') ||
+          t.startsWith('|') ||
+          t.startsWith('$$') ||
+          t.startsWith('~') ||
+          /^\d+\.\s/.test(t) ||
+          /^\[.*\]/.test(t)
+        ) {
           return '// ' + line;
         }
         return line;
@@ -486,6 +535,16 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
     const handsFn = exp.hands;
     const legsFn = exp.legs;
     const feetFn = exp.feet;
+
+    // Nếu không tìm thấy hàm giáp nào (chỉ là đoạn code minh họa hoặc file đọc tài liệu)
+    if (!headFn && !bodyFn && !legsFn && !feetFn && !handsFn) {
+      statusDot.className = 'dot';
+      statusText.textContent = `Đã mở: ${armorName} (Chế độ xem tài liệu)`;
+      document.getElementById('active-set-badge').textContent = armorName;
+      updateChipsUI();
+      return;
+    }
+
     const palData = exp.palette || { base: 0x3a5a40, dark: 0x1a3828, trim: 0x54e8cf, steel: 0xb8c0cc };
 
     activeArmorBuilders = {
@@ -506,6 +565,15 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
     document.getElementById('active-set-badge').textContent = armorName;
 
   } catch (err) {
+    // Kiểm tra xem đây có phải là tài liệu ghi chú thuần không
+    const hasArmorFns = /\b(function\s+(?:head|body|legs|feet|hands|build)|export\s+function|export\s+const)\b/.test(userJs);
+    if (!hasArmorFns) {
+      statusDot.className = 'dot';
+      statusText.textContent = `Đã mở: ${armorName} (Chế độ xem tài liệu)`;
+      errBox.style.display = 'none';
+      return;
+    }
+
     console.error('Lỗi biên dịch giáp:', err);
     errBox.style.display = 'block';
     errBox.textContent = `❌ LỖI BIÊN DỊCH / THỰC THI CODE:\n${err.stack || err.message}`;
