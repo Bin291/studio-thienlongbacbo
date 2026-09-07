@@ -44,28 +44,22 @@ root (tâm mặt đất)
                      └── head (đầu)
 ```
 
-### 2.4 Vóc dáng mặc định (`DEFAULT_APPEARANCE`):
-Nhân vật trong game có thể tùy biến qua các thanh trượt vóc dáng, nhưng giá trị mặc định là:
-- `height: 1.0` (Chiều cao, phạm vi 0.80 - 1.25)
-- `fat: 1.0` (Độ mập, phạm vi 0.80 - 1.40)
-- `legLen: 1.0`, `torsoLen: 1.0`, `armLen: 1.0` (Độ dài chi/thân)
-- `chest: 0.35` (Độ nở ngực), `bust: 0.45` (Vòng 1 nữ), `belly: 0.10` (Bụng), `butt: 0.30` (Mông)
-- `gender: 'male'`, `outfit: 'shirt'` (Áo sơ mi) hoặc `'under'` (Đồ lót)
-
-> 💡 **Quy tắc co giãn giáp:** Giáp **không đặt kích thước tuyệt đối**. Khi render, engine truyền kích thước thực tế `w, h, d` của đốt xương mà nó neo vào (đọc từ `mesh.geometry.parameters`). Code giáp chỉ cần nhân tỉ lệ (ví dụ `w * 1.15`, `h * 0.5`) là sẽ tự động ôm khít nhân vật bất kể người béo, gầy hay cao thấp!
-
 ---
 
-## 3. Quy Chuẩn 4 Món Trang Bị & Điểm Neo (Anchors)
+## 3. Quy Chuẩn 4 Món Trang Bị & Điểm Neo (Anchors) — Chuẩn Kiến Trúc 2026-09-08
 
 Một bộ giáp hoàn chỉnh luôn bao gồm đúng **4 món**:
 
-| Món (`key`) | Tên | Các mesh neo vào trên nhân vật | Số lần gọi builder | Chỉ số cộng |
+| Món (`key`) | Tên | Các mesh neo vào trên nhân vật | Số lần gọi builder | Nhiệm vụ |
 | :--- | :--- | :--- | :--- | :--- |
-| **`head`** | Mũ | `parts.head` (mesh đầu) | 1 lần | Tỉ lệ chí mạng (Crit Rate) |
-| **`body`** | Áo giáp | `parts.torso` (thân/ngực) + 2 bắp tay (`leftArm.mesh`, `rightArm.mesh`) | **3 lần** (`slot: 'torso'`, `'upperArm'`) | Máu tối đa (HP) |
-| **`hands`** | Găng tay | 2 cẳng tay (`leftArm.forearm`, `rightArm.forearm`) | **2 lần** (`slot: 'forearm'`) | Độ chính xác (Accuracy) |
-| **`legs`** | Giày/Ủng | Đùi, cẳng chân, bàn chân cả 2 bên | **6 lần** (`slot: 'thigh'`, `'shin'`, `'foot'`) | Tốc độ chạy (Move Speed) |
+| **`head`** | Mũ | `parts.head` (mesh đầu) | 1 lần | Chỏm mũ, vành nón, mặt nạ, sống bờm. |
+| **`body`** | Áo giáp | `parts.torso` (thân/ngực) + 2 bắp tay (`upperArm`) + 2 cẳng tay (`forearm`) | **5 lần** (`slot: 'torso'`, `'upperArm'`, `'forearm'`) | Thân giáp, cầu vai, tà hông, ống bắp tay, ống cẳng tay (gộp cả 'hands' cũ). |
+| **`legs`** | Quần | Đùi (`thigh`) + Cẳng chân (`shin`) cả 2 bên | **4 lần** (`slot: 'thigh'`, `'shin'`) | Ống quần bó, giáp đùi, nẹp đầu gối. |
+| **`feet`** | Giày / Ủng | Bàn chân (`foot`) cả 2 bên | **2 lần** (`slot: 'foot'`) | Mũi ủng, nẹp mu bàn chân, đế giày. |
+
+> 💡 **Lưu ý quan trọng**:
+> - Cẳng tay **gộp vào Áo giáp (`body`)**, dispatch qua `slot === 'forearm'`.
+> - Bàn chân tách thành hàm riêng **`feet(w, h, d, pal)`**, không còn cần mẹo `isFoot` đoán qua tỉ lệ.
 
 ---
 
@@ -74,7 +68,7 @@ Một bộ giáp hoàn chỉnh luôn bao gồm đúng **4 món**:
 Một file Markdown hợp lệ gồm:
 1. **Tiêu đề (`# Tên Bộ Giáp`)**: Dùng làm tên hiển thị của bộ giáp.
 2. **Mô tả & Ý tưởng thiết kế**: Ghi chép phong cách, cốt truyện hoặc bảng chỉ số.
-3. **Khối code JavaScript**: Đặt trong cặp dấu ```javascript ... ``` chứa 4 hàm xuất xưởng (`head`, `body`, `hands`, `legs`).
+3. **Khối code JavaScript**: Đặt trong cặp dấu ```javascript ... ``` chứa 4 hàm xuất xưởng (`head`, `body`, `legs`, `feet`).
 
 ### Cấu Trúc Hàm Builder:
 Mỗi hàm builder có chữ ký:
@@ -82,7 +76,7 @@ Mỗi hàm builder có chữ ký:
 export function <tênMón>(w, h, d, pal, slot) {
   // w, h, d: Chiều ngang, chiều cao, chiều sâu của mesh neo
   // pal: Bảng màu { base, dark, trim, steel, ... }
-  // slot: Nhãn phân đoạn ('torso', 'upperArm', 'thigh', 'shin', 'foot', 'forearm')
+  // slot: Nhãn phân đoạn ('torso', 'upperArm', 'forearm', 'thigh', 'shin', 'foot')
   return group; // Trả về một THREE.Group
 }
 ```
@@ -92,7 +86,8 @@ export function <tênMón>(w, h, d, pal, slot) {
 ## 5. Bộ Thư Viện Tạo Hình `armorKit` (Khuyên Dùng)
 
 File Markdown được hỗ trợ sẵn bộ kit tạo hình `armorKit` hiện đại nhất của game:
-- **Tấm vát mép 45 độ (`b.slab`)**: Tạo bề mặt kim loại bắt sáng cao cấp, không còn góc cạnh 90° kiểu hộp thô.
+- **Tấm vát mép 45 độ (`b.slab`)**: Tạo bề mặt kim loại bắt sáng cao cấp.
+- **Khối cầu vòm mượt mà (`b.sphere`) (MỚI)**: Tạo bán cầu hoặc chỏm cầu tròn cho cầu vai, đỉnh mũ, ngọc hộ tâm.
 - **Tự động gộp Mesh (`b.build`)**: Gom tất cả khối cùng vật liệu thành 1 BufferGeometry duy nhất, giảm draw call từ 80 xuống còn 4-6 calls/món.
 
 ### Các hàm API chính trong `armorKit`:
@@ -105,18 +100,21 @@ b.slab(matKey, w, h, d, [x, y, z], { ch, rot });
 // 2. Tấm trùm kín một đoạn cơ thể (tự tính góc vát an toàn không lộ da)
 b.cover(matKey, w, h, d, kx, ky, kz, [x, y, z]);
 
-// 3. Chồng bậc thang (dùng cho mũ, cổ găng, cổ ủng, tà giáp)
+// 3. Khối cầu / Bán cầu vòm mượt mà (MỚI 2026-09-08)
+b.sphere(matKey, radius, [x, y, z], { rot, thetaLength: Math.PI * 0.5 });
+
+// 4. Chồng bậc thang (dùng cho mũ, cổ găng, cổ ủng, tà giáp)
 b.bandStack(matKey, { w, h, d, y, z, count: 4, taper: 0.05, trim: 'trimMat' });
 
-// 4. Khung viền kim loại ôm quanh 1 mặt phẳng
+// 5. Khung viền kim loại ôm quanh 1 mặt phẳng
 b.frame(matKey, w, h, z, { t, d, x, y });
 
-// 5. Dựng đối xứng 2 bên (Trái x=-1, Phải x=1)
+// 6. Dựng đối xứng 2 bên (Trái x=-1, Phải x=1)
 b.both((sx) => {
   b.slab(matKey, w * 0.4, h * 0.2, d, [sx * w * 0.6, y, z]);
 });
 
-// 6. Chi tiết phụ trợ
+// 7. Chi tiết phụ trợ
 b.belt(leatherMat, buckleMat, { w, h, d, y }); // Đai thắt lưng
 b.pouch(leatherMat, metalMat, w, h, d, pos);   // Túi đeo hông/đùi
 b.ropeCoil(ropeMat, hookMat, r, pos, rot);      // Cuộn dây thừng + móc
@@ -131,17 +129,18 @@ return b.build(); // Trả về THREE.Group đã gộp mesh hoàn chỉnh
 ## 6. Bài Học Rigging Bắt Buộc Khi Thiết Kế (Chống Xuyên Giáp)
 
 1. **Ống bắp tay (Upper Arm)**:
-   - Phải kiểm tra `if (slot === 'upperArm')`: Dựng ống bọc bắp tay gắn vào mesh bắp tay để vung cùng khớp vai.
+   - Kiểm tra `if (slot === 'upperArm')`: Dựng ống bọc bắp tay gắn vào mesh bắp tay để vung cùng khớp vai.
    - Thon nhỏ trục Z ở phần trên sát khớp vai để cung quét khi vung tay không bị trồi quá cao.
-2. **Giáp vai / Pauldron trên thân (Torso)**:
-   - Pauldron gắn trên ngực là khối tĩnh. Do đó khối vai phải là một **mái vòm (dome) đủ sâu trục Z** (`d * 1.5 - 1.6`) để trùm kín đỉnh ống bắp tay khi tay vung ra trước và sau.
-3. **Phủ kín thân dưới (Bụng & Chậu)**:
+2. **Ống cẳng tay (Forearm)**:
+   - Kiểm tra `if (slot === 'forearm')`: Dựng ống bọc cẳng tay gắn vào mesh cẳng tay để vung cùng khuỷu tay.
+3. **Giáp vai / Pauldron trên thân (Torso)**:
+   - Pauldron gắn trên ngực là khối tĩnh. Do đó khối vai phải là một **mái vòm (dome) đủ sâu trục Z** (`d * 1.3 - 1.6`) hoặc dùng `b.sphere()` để trùm kín đỉnh ống bắp tay khi tay vung ra trước và sau.
+4. **Phủ kín thân dưới (Bụng & Chậu)**:
    - Tham số `h` của `body` là chiều cao mesh **Ngực**, nhưng dưới ngực còn có **Bụng** (`belly`) và **Quần đùi** (`shorts`).
    - Tọa độ áo giáp phải phủ xuống tận `y ≈ -1.4h` đến `-1.5h` (đai lưng, tà giáp trước/sau/hông và tấm đũng giữa) để không hở đồ lót.
-4. **Giày và chân (`legs`)**:
-   - Phân biệt bàn chân với đùi/cẳng chân bằng `slot === 'foot'` (hoặc `d > h * 1.3`).
-   - Bàn chân có chiều sâu Z lớn hơn hẳn, cần dựng dạng ủng mũi vuông/mũi vát và đế dày.
-   - Cẳng chân và đùi cần nẹp đầu gối hoặc đai khớp để khi co gối không bị hở da.
+5. **Giày và Quần (`legs` & `feet`)**:
+   - Quần (`legs`) phủ trọn đùi và cẳng chân.
+   - Giày (`feet`) là hàm riêng biệt, phủ bàn chân với đế dày và mũi bảo hộ.
 
 ---
 
@@ -157,6 +156,8 @@ return b.build(); // Trả về THREE.Group đã gộp mesh hoàn chỉnh
    - Hệ thống tự động bóc tách code JS bên trong file Markdown.
    - Nhân vật 3D trên màn hình sẽ ngay lập tức mặc bộ giáp mới lên người.
 4. Kiểm tra chất lượng:
-   - Dùng chuột xoay 360 độ, zoom cận cảnh từng góc (Mũ, Áo, Găng, Giày).
-   - Tích chọn **Chạy/Đi bộ** và thử các chiêu thức trong ô chọn động tác để kiểm tra xem có chỗ nào bị lòi da hay xuyên giáp không.
+   - Bật **Áo lót giáp (Gambeson)** và tích chọn **🛡️ Chống xuyên giáp** để đảm bảo 100% không lộ da thịt.
+   - Dùng chuột xoay 360 độ, zoom cận cảnh từng góc (Mũ, Áo, Quần, Giày).
+   - Tích chọn **Chạy/Đi bộ** và thử các chiêu thức trong ô chọn động tác để kiểm tra cử động.
+   - Bấm **📸 Chụp full góc (.zip)** để tự động chụp 9 góc ảnh đóng gói ZIP tải về máy.
    - Bấm **💾 Xuất .md** để lưu lại bản hoàn thiện.

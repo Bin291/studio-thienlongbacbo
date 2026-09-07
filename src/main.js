@@ -101,12 +101,68 @@ function getAnchors(char, part) {
     return [g.width, g.height, g.depth];
   };
   const A = (mesh, slot) => ({ mesh, dims: dims(mesh), slot });
-  if (part === 'body') return [A(p.torso, 'torso'), A(p.leftArm.mesh, 'upperArm'), A(p.rightArm.mesh, 'upperArm')];
+
+  const hasFeetBuilder = !!activeArmorBuilders?.feet;
+  const hasHandsBuilder = !!activeArmorBuilders?.hands;
+
   if (part === 'head') return [A(p.head, 'head')];
+
+  if (part === 'body') {
+    // Chuẩn 2026-09-08: Nếu không có builder 'hands' riêng, body gộp luôn cẳng tay (slot: 'forearm')
+    if (!hasHandsBuilder) {
+      return [
+        A(p.torso, 'torso'),
+        A(p.leftArm.mesh, 'upperArm'), A(p.rightArm.mesh, 'upperArm'),
+        A(p.leftArm.forearm, 'forearm'), A(p.rightArm.forearm, 'forearm'),
+      ];
+    }
+    return [A(p.torso, 'torso'), A(p.leftArm.mesh, 'upperArm'), A(p.rightArm.mesh, 'upperArm')];
+  }
+
+  if (part === 'legs') {
+    // Chuẩn 2026-09-08: Nếu có builder 'feet' riêng, legs chỉ là Quần (đùi + cẳng chân)
+    if (hasFeetBuilder) {
+      return [
+        A(p.leftLeg.mesh, 'thigh'), A(p.leftLeg.shin, 'shin'),
+        A(p.rightLeg.mesh, 'thigh'), A(p.rightLeg.shin, 'shin'),
+      ];
+    }
+    // Legacy: bao gồm cả bàn chân
+    return [
+      A(p.leftLeg.mesh, 'thigh'), A(p.leftLeg.shin, 'shin'), A(p.leftLeg.foot, 'foot'),
+      A(p.rightLeg.mesh, 'thigh'), A(p.rightLeg.shin, 'shin'), A(p.rightLeg.foot, 'foot'),
+    ];
+  }
+
+  if (part === 'feet') {
+    return [A(p.leftLeg.foot, 'foot'), A(p.rightLeg.foot, 'foot')];
+  }
+
+  if (part === 'hands') {
+    return [A(p.leftArm.forearm, 'forearm'), A(p.rightArm.forearm, 'forearm')];
+  }
+
+  return [];
+}
+
+function getAnchorsForClean(character, part) {
+  const p = character.parts;
+  const dims = (mesh) => {
+    const g = mesh.geometry.parameters;
+    return [g.width, g.height, g.depth];
+  };
+  const A = (mesh, slot) => ({ mesh, dims: dims(mesh), slot });
+  if (part === 'head') return [A(p.head, 'head')];
+  if (part === 'body') return [
+    A(p.torso, 'torso'),
+    A(p.leftArm.mesh, 'upperArm'), A(p.rightArm.mesh, 'upperArm'),
+    A(p.leftArm.forearm, 'forearm'), A(p.rightArm.forearm, 'forearm'),
+  ];
   if (part === 'legs') return [
     A(p.leftLeg.mesh, 'thigh'), A(p.leftLeg.shin, 'shin'), A(p.leftLeg.foot, 'foot'),
     A(p.rightLeg.mesh, 'thigh'), A(p.rightLeg.shin, 'shin'), A(p.rightLeg.foot, 'foot'),
   ];
+  if (part === 'feet') return [A(p.leftLeg.foot, 'foot'), A(p.rightLeg.foot, 'foot')];
   if (part === 'hands') return [A(p.leftArm.forearm, 'forearm'), A(p.rightArm.forearm, 'forearm')];
   return [];
 }
@@ -136,13 +192,48 @@ function updateChipsUI() {
   };
   chip('chip-head', set?.head, 'Mũ');
   chip('chip-body', set?.body, 'Áo giáp');
-  chip('chip-hands', set?.hands, 'Găng tay');
-  chip('chip-legs', set?.legs, 'Giày/Chân');
+  chip('chip-legs', set?.legs, 'Quần');
+
+  const chipFeet = document.getElementById('chip-feet');
+  const chipHands = document.getElementById('chip-hands');
+
+  if (set?.feet) {
+    chip('chip-feet', set.feet, 'Giày');
+    if (chipHands) chipHands.style.display = set.hands ? 'inline-flex' : 'none';
+    if (set.hands) chip('chip-hands', set.hands, 'Găng');
+  } else if (set?.hands) {
+    chip('chip-feet', set.legs, 'Giày (Chung)');
+    if (chipHands) {
+      chipHands.style.display = 'inline-flex';
+      chip('chip-hands', set.hands, 'Găng tay');
+    }
+  } else {
+    chip('chip-feet', null, 'Giày');
+    if (chipHands) chipHands.style.display = 'none';
+  }
 }
 
 function reapplyCurrentArmor() {
   if (!character) return;
-  const parts = ['head', 'body', 'hands', 'legs'];
+  const allPossibleParts = ['head', 'body', 'hands', 'legs', 'feet'];
+
+  // 1. Dọn dẹp giáp cũ trên toàn bộ anchors
+  for (const pName of allPossibleParts) {
+    const key = 'armor:' + pName;
+    const testAnchors = getAnchorsForClean(character, pName);
+    for (const a of testAnchors) {
+      const prev = a.mesh.getObjectByName(key);
+      if (prev) {
+        a.mesh.remove(prev);
+        disposeGroup(prev);
+      }
+    }
+  }
+
+  const parts = ['head', 'body'];
+  if (activeArmorBuilders?.hands) parts.push('hands');
+  parts.push('legs');
+  if (activeArmorBuilders?.feet) parts.push('feet');
 
   let totalMeshes = 0;
   let totalCalls = 0;
@@ -156,11 +247,6 @@ function reapplyCurrentArmor() {
     const pal = activeArmorBuilders ? activeArmorBuilders.pal(activeArmorBuilders) : null;
 
     for (const a of anchors) {
-      const prev = a.mesh.getObjectByName(key);
-      if (prev) {
-        a.mesh.remove(prev);
-        disposeGroup(prev);
-      }
       // Nếu chỉ dùng Texture Paint thuần thì không đắp khối 3D (trừ mũ giáp nếu có)
       if (builder && (!isTextureOnly || part === 'head')) {
         try {
@@ -195,7 +281,7 @@ function reapplyCurrentArmor() {
       character.setArmorOcclusion({
         slimTorso: isHybrid || (!isTextureOnly && !!activeArmorBuilders?.body),
         slimArms: !isTextureOnly && (!!activeArmorBuilders?.body || !!activeArmorBuilders?.hands),
-        slimLegs: !isTextureOnly && !!activeArmorBuilders?.legs,
+        slimLegs: !isTextureOnly && (!!activeArmorBuilders?.legs || !!activeArmorBuilders?.feet),
         hideHair: !!activeArmorBuilders?.head,
       });
     } else {
@@ -368,6 +454,7 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
       const _body = typeof body !== 'undefined' ? body : (typeof buildChest !== 'undefined' ? buildChest : (typeof buildBody !== 'undefined' ? buildBody : (typeof buildWarriorChest !== 'undefined' ? buildWarriorChest : (typeof buildAssassinChest !== 'undefined' ? buildAssassinChest : (typeof buildArcherChest !== 'undefined' ? buildArcherChest : null)))));
       const _hands = typeof hands !== 'undefined' ? hands : (typeof buildHands !== 'undefined' ? buildHands : (typeof buildWarriorHands !== 'undefined' ? buildWarriorHands : (typeof buildAssassinHands !== 'undefined' ? buildAssassinHands : (typeof buildArcherHands !== 'undefined' ? buildArcherHands : null))));
       const _legs = typeof legs !== 'undefined' ? legs : (typeof buildLeg !== 'undefined' ? buildLeg : (typeof buildLegs !== 'undefined' ? buildLegs : (typeof buildWarriorLeg !== 'undefined' ? buildWarriorLeg : (typeof buildAssassinLeg !== 'undefined' ? buildAssassinLeg : (typeof buildArcherLeg !== 'undefined' ? buildArcherLeg : null)))));
+      const _feet = typeof feet !== 'undefined' ? feet : (typeof buildFoot !== 'undefined' ? buildFoot : (typeof buildFeet !== 'undefined' ? buildFeet : (typeof buildWarriorFoot !== 'undefined' ? buildWarriorFoot : (typeof buildAssassinFoot !== 'undefined' ? buildAssassinFoot : (typeof buildArcherFoot !== 'undefined' ? buildArcherFoot : null)))));
       const _pal = typeof palette !== 'undefined' ? palette : (typeof PALETTE !== 'undefined' ? PALETTE : (typeof palFor !== 'undefined' ? palFor : (typeof PAL !== 'undefined' ? PAL : null)));
       const _def = typeof __DEFAULT_EXPORT__ !== 'undefined' ? __DEFAULT_EXPORT__ : null;
 
@@ -376,6 +463,7 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
         body: _body || _def?.body || null,
         hands: _hands || _def?.hands || null,
         legs: _legs || _def?.legs || null,
+        feet: _feet || _def?.feet || null,
         palette: _pal || _def?.palette || null,
       };
     `;
@@ -397,6 +485,7 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
     const bodyFn = exp.body;
     const handsFn = exp.hands;
     const legsFn = exp.legs;
+    const feetFn = exp.feet;
     const palData = exp.palette || { base: 0x3a5a40, dark: 0x1a3828, trim: 0x54e8cf, steel: 0xb8c0cc };
 
     activeArmorBuilders = {
@@ -405,6 +494,7 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
       body: bodyFn,
       hands: handsFn,
       legs: legsFn,
+      feet: feetFn,
       pal: typeof palData === 'function' ? palData : () => palData,
     };
 
@@ -430,7 +520,8 @@ const PRESET_MD = {
 
 Bộ giáp hoàng kim lấy cảm hứng từ Thần Kim Quy và hoa văn Đại Việt cổ điển.
 - **Phong cách**: \`armorKit\` vát cạnh 45 độ, đan xen phiến giáp vàng kim và ngọc lục bảo.
-- **Quy cách**: Gồm đủ 4 món: Mũ Hoàng Kim, Áo Thần Quy, Găng Hộ Thủ, Ủng Thiết Giáp.
+- **Quy cách (Chuẩn 2026-09-08)**: Gồm đủ 4 món: Mũ (head), Áo giáp (body), Quần (legs), Giày (feet).
+- **Ghi chú**: Cẳng tay gộp vào Áo giáp (\`slot === 'forearm'\`), Giày (\`feet\`) có hàm riêng không cần đoán qua tỉ lệ.
 
 \`\`\`javascript
 const M = (pal) => ({
@@ -452,93 +543,96 @@ export function head(w, h, d, pal) {
 
   b.both((sx) => {
     b.slab('gold', w * 0.18, h * 0.82, d * 1.05, [sx * w * 0.48, -h * 0.12, d * 0.05], { ch: h * 0.06 });
-    b.slab('goldDark', w * 0.06, h * 0.58, d * 0.08, [sx * w * 0.48, -h * 0.24, d * 0.58], { ch: h * 0.02 });
   });
-  b.slab('goldDark', w * 0.86, h * 0.36, d * 0.22, [0, -h * 0.42, d * 0.54], { ch: h * 0.06 });
+
+  b.slab('goldDark', w * 0.86, h * 0.28, d * 0.22, [0, -h * 0.45, d * 0.54], { ch: h * 0.05 });
   return b.build();
 }
 
-// 2. ÁO GIÁP (Body)
+// Helper cẳng tay (gộp vào Áo giáp theo chuẩn 2026-09-08)
+function forearmArmor(w, h, d, pal) {
+  const b = piece(M(pal));
+  b.cover('cloth', w, h, d, 1.12, 1.05, 1.12, [0, 0, 0]);
+  b.bandStack('gold', { w: w * 1.25, h: h * 0.78, d: d * 1.25, y: -h * 0.1, count: 3, taper: 0.04, trim: 'goldDark' });
+  b.slab('jade', w * 0.36, h * 0.32, d * 0.16, [0, -h * 0.15, d * 0.65], { ch: h * 0.03 });
+  return b.build();
+}
+
+// 2. ÁO GIÁP (Body) — gồm Ngực/thân + Bắp tay (upperArm) + Cẳng tay (forearm)
 export function body(w, h, d, pal, slot) {
   const mats = M(pal);
+
   if (slot === 'upperArm') {
     const b = piece(mats);
-    b.bandStack('gold', { w: w * 1.24, h: h * 0.84, d: d * 1.24, y: -h * 0.24, count: 3, taper: 0.04, trim: 'goldDark' });
-    b.slab('gold', w * 1.28, h * 0.22, d * 1.24, [0, h * 0.48, 0], { ch: h * 0.05 });
-    b.slab('jade', w * 0.32, h * 0.28, d * 0.14, [0, h * 0.46, d * 0.62], { ch: h * 0.03 });
+    b.bandStack('gold', { w: w * 1.24, h: h * 0.85, d: d * 1.24, y: -h * 0.22, count: 3, taper: 0.05, trim: 'goldDark' });
+    b.slab('goldDark', w * 1.28, h * 0.08, d * 1.28, [0, -h * 0.62, 0], { ch: h * 0.02 });
+    b.slab('gold', w * 1.15, h * 0.48, d * 0.92, [0, h * 0.24, 0], { ch: h * 0.04 });
+    b.slab('jade', w * 0.32, h * 0.28, d * 0.14, [0, h * 0.46, d * 0.60], { ch: h * 0.03 });
     return b.build();
+  }
+
+  if (slot === 'forearm') {
+    return forearmArmor(w, h, d, pal);
   }
 
   const b = piece(mats);
-  const fz = d * 0.62;
-  b.slab('goldDark', w * 0.54, h * 0.48, d * 0.84, [0, h * 0.65, 0], { ch: h * 0.08 });
-  b.slab('gold', w * 1.18, h * 0.78, d * 1.18, [0, h * 0.14, 0], { ch: h * 0.07 });
-  b.slab('jade', w * 0.62, h * 0.52, d * 0.12, [0, h * 0.14, fz + d * 0.02], { ch: h * 0.05 });
-  b.slab('glow', w * 0.18, h * 0.36, d * 0.08, [0, h * 0.14, fz + d * 0.08], { ch: h * 0.02 });
-
-  b.slab('goldDark', w * 1.12, h * 0.28, d * 1.12, [0, -h * 0.38, 0], { ch: h * 0.05 });
-  b.slab('cloth', w * 1.08, h * 0.46, d * 1.14, [0, -h * 0.94, 0], { ch: h * 0.05 });
-  b.belt('goldDark', 'gold', { w: w * 1.14, h: h * 0.2, d: d * 1.18, y: -h * 1.14 });
+  b.slab('cloth', w * 0.48, h * 0.42, d * 0.75, [0, h * 0.62, 0], { ch: h * 0.08 });
+  b.slab('goldDark', w * 0.52, h * 0.08, d * 0.80, [0, h * 0.52, 0], { ch: h * 0.02 });
+  b.cover('gold', w, h, d, 1.22, 1.05, 1.25, [0, 0, 0]);
 
   b.both((sx) => {
-    b.slab('gold', w * 0.48, h * 0.28, d * 1.35, [sx * w * 0.76, h * 0.44, 0], { ch: h * 0.06 });
-    b.slab('jade', w * 0.38, h * 0.14, d * 1.18, [sx * w * 0.76, h * 0.62, 0], { ch: h * 0.04 });
+    b.slab('gold', w * 0.48, h * 0.35, d * 1.28, [sx * w * 0.58, h * 0.42, 0], { ch: h * 0.06 });
+    b.slab('jade', w * 0.24, h * 0.22, d * 0.15, [sx * w * 0.58, h * 0.48, d * 0.58], { ch: h * 0.03 });
   });
 
-  const sy = -h * 1.32;
-  const tasset = (x, z, ry, wide) => {
-    b.push([x, sy, z], [0, ry || 0, 0]);
-    const wl = wide ? w * 0.82 : w * 0.44;
-    b.slab('cloth', wl * 0.95, h * 0.34, d * 0.12, [0, -h * 0.14, 0], { ch: h * 0.05 });
-    b.slab('gold', wl, h * 0.26, d * 0.15, [0, -h * 0.04, d * 0.02], { ch: h * 0.06 });
-    b.pop();
-  };
-  tasset(0, fz * 0.9, 0, true);
-  tasset(0, -fz * 0.9, 0, true);
-  tasset(-w * 0.58, 0, Math.PI / 2, false);
-  tasset(w * 0.58, 0, Math.PI / 2, false);
+  b.slab('jade', w * 0.38, h * 0.38, d * 0.18, [0, h * 0.15, d * 0.64], { ch: h * 0.04 });
+  b.slab('glow', w * 0.16, h * 0.16, d * 0.10, [0, h * 0.15, d * 0.72], { ch: h * 0.02 });
+
+  const sy = -h * 0.82;
+  b.slab('goldDark', w * 1.16, h * 0.15, d * 1.20, [0, -h * 0.48, 0], { ch: h * 0.02 });
+  b.slab('cloth', w * 0.75, h * 0.52, d * 0.12, [0, sy - h * 0.05, d * 0.60], { ch: h * 0.03 });
+  b.slab('gold', w * 0.55, h * 0.38, d * 0.14, [0, sy, d * 0.62], { ch: h * 0.03 });
+  b.slab('cloth', w * 0.95, h * 0.62, d * 0.12, [0, sy - h * 0.08, -d * 0.60], { ch: h * 0.03 });
 
   return b.build();
 }
 
-// 3. GĂNG TAY (Hands)
-export function hands(w, h, d, pal) {
-  const b = piece(M(pal));
-  b.bandStack('gold', { w: w * 1.2, h: h * 1.14, d: d * 1.2, y: h * 0.1, count: 4, taper: -0.04, trim: 'goldDark' });
-  b.slab('jade', w * 0.55, h * 0.45, d * 0.12, [0, h * 0.15, d * 0.62], { ch: h * 0.04 });
-  b.slab('goldDark', w * 1.24, h * 0.46, d * 1.26, [0, -h * 0.56, 0], { ch: h * 0.04 });
-  return b.build();
-}
-
-// 4. GIÀY / ỦNG (Legs)
+// 3. QUẦN (Legs) — Đùi (thigh) & Cẳng chân (shin)
 export function legs(w, h, d, pal, slot) {
   const b = piece(M(pal));
-  const isFoot = slot ? slot === 'foot' : d > h * 1.3;
-
-  if (isFoot) {
-    b.cover('gold', w, h, d, 1.08, 1.5, 1.25, [0, h * 0.28, d * 0.06]);
-    b.slab('jade', w * 0.88, h * 0.45, d * 0.16, [0, h * 0.22, d * 0.68], { ch: h * 0.06 });
-    b.cover('goldDark', w, h, d, 1.12, 0.7, 1.28, [0, -h * 0.5, d * 0.04]);
-    return b.build();
-  }
-
   if (slot === 'shin') {
-    b.cover('cloth', w, h, d, 1.08, 1.04, 1.16, [0, h * 0.12, 0]);
-    b.bandStack('gold', { w: w * 1.16, h: h * 0.75, d: d * 1.22, y: -h * 0.28, count: 3, taper: 0.05, trim: 'goldDark' });
-    b.slab('jade', w * 0.48, h * 0.32, d * 0.14, [0, h * 0.3, d * 0.62], { ch: h * 0.05 });
+    b.cover('cloth', w, h, d, 1.08, 1.02, 1.16, [0, h * 0.10, 0]);
+    b.bandStack('gold', { w: w * 1.20, h: h * 0.78, d: d * 1.24, y: -h * 0.1, count: 3, taper: 0.03, trim: 'goldDark' });
+    b.slab('jade', w * 0.34, h * 0.35, d * 0.15, [0, h * 0.25, d * 0.62], { ch: h * 0.03 });
     return b.build();
   }
-
-  b.cover('cloth', w, h, d, 1.08, 1.06, 1.18, [0, 0, 0]);
-  b.belt('goldDark', 'gold', { w: w * 1.14, h: h * 0.12, d: d * 1.14, y: h * 0.32 });
+  // đùi (thigh / default)
+  b.cover('cloth', w, h, d, 1.08, 1.04, 1.18, [0, 0, 0]);
+  b.slab('gold', w * 1.18, h * 0.14, d * 1.20, [0, h * 0.35, 0], { ch: h * 0.02 });
+  b.slab('jade', w * 0.35, h * 0.28, d * 0.15, [0, -h * 0.25, d * 0.62], { ch: h * 0.04 });
   return b.build();
 }
+
+// 4. GIÀY (Feet) — Bàn chân / Ủng riêng
+export function feet(w, h, d, pal) {
+  const b = piece(M(pal));
+  b.cover('gold', w, h, d, 1.18, 1.42, 1.48, [0, h * 0.22, d * 0.12]);
+  b.slab('jade', w * 0.45, h * 0.15, d * 0.40, [0, h * 0.18, d * 0.65], { ch: h * 0.02 });
+  b.cover('goldDark', w, h, d, 1.20, 0.65, 1.50, [0, -h * 0.52, d * 0.10]);
+  return b.build();
+}
+
+export const GOLDEN_TURTLE = { head, body, legs, feet };
 \`\`\`
 `,
 
   black_tortoise: `# Bộ Giáp Huyền Vũ Chiến Thần (Black Tortoise War God)
 
 Trọng giáp hắc kim Titan kết hợp viền đồng hun cổ điển và ngọc lục bảo phát sáng.
+- **Phong cách**: \`armorKit\` vát cạnh 45 độ, phong cách Chiến Binh (Warrior) hạng nặng.
+- **Quy cách (Chuẩn 2026-09-08)**: 4 món hoàn chỉnh: Mũ (head), Áo giáp (body), Quần (legs), Giày (feet).
+- **Ghi chú**: Cẳng tay gộp vào Áo giáp (\`slot === 'forearm'\`), Giày (\`feet\`) có hàm riêng biệt.
+
 \`\`\`javascript
 const M = (pal) => ({
   plate:    { color: 0x15181e, metalness: 0.85, roughness: 0.38 },
@@ -551,6 +645,7 @@ const M = (pal) => ({
   glow:     { color: 0x54e8cf, metalness: 0.10, roughness: 0.20, emissive: 0x54e8cf, emissiveIntensity: 0.95 },
 });
 
+// 1. MŨ (Head)
 export function head(w, h, d, pal) {
   const b = piece(M(pal));
   b.bandStack('plate', { w: w * 1.14, h: h * 1.28, d: d * 1.26, y: h * 0.16, count: 4, taper: 0.07, trim: 'plateLo' });
@@ -572,6 +667,18 @@ export function head(w, h, d, pal) {
   return b.build();
 }
 
+// Helper cẳng tay (gộp vào Áo giáp theo chuẩn 2026-09-08)
+function forearmArmor(w, h, d, pal) {
+  const b = piece(M(pal));
+  b.cover('cloth', w, h, d, 1.12, 1.05, 1.12, [0, 0, 0]);
+  b.bandStack('plate', { w: w * 1.26, h: h * 0.80, d: d * 1.26, y: -h * 0.1, count: 3, taper: 0.04, trim: 'plateLo' });
+  b.slab('copper', w * 1.28, h * 0.08, d * 1.28, [0, h * 0.28, 0], { ch: h * 0.02 });
+  b.slab('jade', w * 0.36, h * 0.32, d * 0.16, [0, -h * 0.15, d * 0.65], { ch: h * 0.03 });
+  b.slab('glow', w * 0.12, h * 0.12, d * 0.10, [0, -h * 0.15, d * 0.72], { ch: h * 0.02 });
+  return b.build();
+}
+
+// 2. ÁO GIÁP (Body) — gồm Ngực/thân + Bắp tay (upperArm) + Cẳng tay (forearm)
 export function body(w, h, d, pal, slot) {
   const mats = M(pal);
   if (slot === 'upperArm') {
@@ -582,69 +689,67 @@ export function body(w, h, d, pal, slot) {
     b.slab('jade', w * 0.32, h * 0.28, d * 0.14, [0, h * 0.46, d * 0.60], { ch: h * 0.03 });
     return b.build();
   }
-  const b = piece(mats);
-  const fz = d * 0.62;
-  b.slab('plateLo', w * 0.56, h * 0.5, d * 0.86, [0, h * 0.66, 0], { ch: h * 0.08 });
-  b.slab('copper', w * 0.6, h * 0.06, d * 0.9, [0, h * 0.44, 0], { ch: h * 0.02 });
-  b.slab('plate', w * 1.2, h * 0.8, d * 1.2, [0, h * 0.12, 0], { ch: h * 0.07 });
-  b.frame('copper', w * 0.86, h * 0.54, fz + d * 0.02, { y: h * 0.14, t: w * 0.05 });
-  b.slab('jade', w * 0.44, h * 0.36, d * 0.12, [0, h * 0.14, fz + d * 0.04], { ch: h * 0.04 });
-  b.slab('glow', w * 0.16, h * 0.24, d * 0.08, [0, h * 0.14, fz + d * 0.10], { ch: h * 0.02 });
 
-  b.slab('plateLo', w * 1.14, h * 0.3, d * 1.14, [0, -h * 0.38, 0], { ch: h * 0.05 });
-  b.slab('cloth', w * 1.08, h * 0.48, d * 1.15, [0, -h * 0.96, 0], { ch: h * 0.05 });
-  b.belt('leather', 'copper', { w: w * 1.15, h: h * 0.22, d: d * 1.18, y: -h * 1.16 });
+  if (slot === 'forearm') {
+    return forearmArmor(w, h, d, pal);
+  }
+
+  const b = piece(mats);
+  b.slab('cloth', w * 0.48, h * 0.44, d * 0.78, [0, h * 0.62, 0], { ch: h * 0.08 });
+  b.slab('copper', w * 0.52, h * 0.08, d * 0.82, [0, h * 0.54, 0], { ch: h * 0.02 });
+  b.cover('plate', w, h, d, 1.24, 1.06, 1.26, [0, 0, 0]);
 
   b.both((sx) => {
-    b.slab('plate', w * 0.55, h * 0.3, d * 1.55, [sx * w * 0.8, h * 0.44, 0], { ch: h * 0.06 });
-    b.slab('copper', w * 0.46, h * 0.18, d * 1.35, [sx * w * 0.78, h * 0.66, 0], { ch: h * 0.05 });
-    b.slab('plateLo', w * 0.5, h * 0.5, d * 1.45, [sx * w * 0.86, h * 0.08, 0], { ch: h * 0.07 });
+    b.slab('plateHi', w * 0.52, h * 0.38, d * 1.30, [sx * w * 0.58, h * 0.42, 0], { ch: h * 0.06 });
+    b.slab('copper', w * 0.14, h * 0.42, d * 1.32, [sx * w * 0.78, h * 0.44, 0], { ch: h * 0.03 });
+    b.slab('jade', w * 0.24, h * 0.22, d * 0.15, [sx * w * 0.58, h * 0.48, d * 0.60], { ch: h * 0.03 });
   });
 
-  const sy = -h * 1.34;
-  const tasset = (x, z, ry, wide) => {
-    b.push([x, sy, z], [0, ry || 0, 0]);
-    const wl = wide ? w * 0.84 : w * 0.44;
-    b.slab('cloth', wl * 0.96, h * 0.36, d * 0.12, [0, -h * 0.16, 0], { ch: h * 0.05 });
-    b.slab('plate', wl, h * 0.28, d * 0.16, [0, -h * 0.06, d * 0.02], { ch: h * 0.06 });
-    b.slab('copper', wl * 0.98, h * 0.05, d * 0.18, [0, -h * 0.22, d * 0.02], { ch: h * 0.015 });
-    b.pop();
-  };
-  tasset(0, fz * 0.92, 0, true);
-  tasset(0, -fz * 0.92, 0, true);
-  tasset(-w * 0.58, 0, Math.PI / 2, false);
-  tasset(w * 0.58, 0, Math.PI / 2, false);
+  b.slab('copper', w * 0.42, h * 0.42, d * 0.18, [0, h * 0.15, d * 0.64], { ch: h * 0.04 });
+  b.slab('jade', w * 0.24, h * 0.24, d * 0.12, [0, h * 0.15, d * 0.72], { ch: h * 0.03 });
+  b.slab('glow', w * 0.10, h * 0.10, d * 0.08, [0, h * 0.15, d * 0.78], { ch: h * 0.02 });
+
+  const sy = -h * 0.82;
+  b.slab('leather', w * 1.18, h * 0.16, d * 1.22, [0, -h * 0.46, 0], { ch: h * 0.02 });
+  b.slab('copper', w * 0.32, h * 0.20, d * 0.14, [0, -h * 0.46, d * 0.63], { ch: h * 0.02 });
+
+  b.slab('cloth', w * 0.78, h * 0.54, d * 0.12, [0, sy - h * 0.05, d * 0.60], { ch: h * 0.03 });
+  b.slab('plate', w * 0.56, h * 0.40, d * 0.14, [0, sy, d * 0.62], { ch: h * 0.03 });
+  b.slab('copper', w * 0.12, h * 0.42, d * 0.15, [0, sy, d * 0.68], { ch: h * 0.02 });
+  b.slab('cloth', w * 0.96, h * 0.64, d * 0.12, [0, sy - h * 0.08, -d * 0.60], { ch: h * 0.03 });
+
   return b.build();
 }
 
-export function hands(w, h, d, pal) {
-  const b = piece(M(pal));
-  b.bandStack('plate', { w: w * 1.22, h: h * 1.15, d: d * 1.22, y: h * 0.1, count: 4, taper: -0.04, trim: 'copper', ch: h * 0.045 });
-  b.slab('copper', w * 1.26, h * 0.06, d * 1.26, [0, h * 0.66, 0], { ch: h * 0.02 });
-  b.slab('plateLo', w * 1.28, h * 0.48, d * 1.28, [0, -h * 0.58, 0], { ch: h * 0.04 });
-  b.slab('jade', w * 0.6, h * 0.35, d * 0.14, [0, -h * 0.46, d * 0.56], { ch: h * 0.04 });
-  return b.build();
-}
-
+// 3. QUẦN (Legs) — Đùi (thigh) & Cẳng chân (shin)
 export function legs(w, h, d, pal, slot) {
   const b = piece(M(pal));
-  const isFoot = slot ? slot === 'foot' : d > h * 1.3;
-  if (isFoot) {
-    b.cover('plate', w, h, d, 1.08, 1.52, 1.26, [0, h * 0.28, d * 0.06]);
-    b.slab('copper', w * 0.95, h * 0.55, d * 0.3, [0, h * 0.16, d * 0.64], { ch: h * 0.12 });
-    b.cover('plateLo', w, h, d, 1.12, 0.75, 1.3, [0, -h * 0.52, d * 0.04]);
-    return b.build();
-  }
   if (slot === 'shin') {
-    b.cover('cloth', w, h, d, 1.08, 1.04, 1.16, [0, h * 0.12, 0]);
-    b.bandStack('plate', { w: w * 1.18, h: h * 0.76, d: d * 1.24, y: -h * 0.28, count: 3, taper: 0.05, trim: 'copper', ch: h * 0.05 });
-    b.slab('jade', w * 0.52, h * 0.38, d * 0.16, [0, h * 0.3, d * 0.62], { ch: h * 0.06 });
+    b.cover('cloth', w, h, d, 1.08, 1.02, 1.16, [0, h * 0.10, 0]);
+    b.bandStack('plate', { w: w * 1.22, h: h * 0.80, d: d * 1.25, y: -h * 0.1, count: 3, taper: 0.03, trim: 'plateLo' });
+    b.slab('copper', w * 0.36, h * 0.36, d * 0.16, [0, h * 0.25, d * 0.62], { ch: h * 0.03 });
+    b.slab('jade', w * 0.20, h * 0.20, d * 0.12, [0, h * 0.25, d * 0.68], { ch: h * 0.02 });
     return b.build();
   }
-  b.cover('cloth', w, h, d, 1.08, 1.06, 1.18, [0, 0, 0]);
-  b.belt('leather', 'copper', { w: w * 1.15, h: h * 0.12, d: d * 1.15, y: h * 0.3 });
+  // đùi (thigh / default)
+  b.cover('cloth', w, h, d, 1.08, 1.04, 1.18, [0, 0, 0]);
+  b.slab('copper', w * 1.20, h * 0.14, d * 1.22, [0, h * 0.36, 0], { ch: h * 0.02 });
+  b.slab('plate', w * 0.48, h * 0.34, d * 0.18, [0, -h * 0.22, d * 0.60], { ch: h * 0.04 });
+  b.slab('jade', w * 0.24, h * 0.22, d * 0.12, [0, -h * 0.22, d * 0.68], { ch: h * 0.03 });
   return b.build();
 }
+
+// 4. GIÀY (Feet) — Bàn chân / Ủng riêng
+export function feet(w, h, d, pal) {
+  const b = piece(M(pal));
+  b.cover('plate', w, h, d, 1.20, 1.45, 1.50, [0, h * 0.22, d * 0.12]);
+  b.slab('copper', w * 0.48, h * 0.16, d * 0.42, [0, h * 0.18, d * 0.66], { ch: h * 0.02 });
+  b.slab('glow', w * 0.14, h * 0.12, d * 0.10, [0, h * 0.18, d * 0.78], { ch: h * 0.02 });
+  b.cover('plateLo', w, h, d, 1.22, 0.66, 1.52, [0, -h * 0.52, d * 0.10]);
+  return b.build();
+}
+
+export const BLACK_TORTOISE = { head, body, legs, feet };
 \`\`\`
 `,
 
