@@ -34,6 +34,12 @@
     <!-- Thanh dưới: Điều khiển nhân vật, chuyển động, vóc dáng -->
     <div class="vp-overlay-bottom">
       <div class="control-card">
+        <label>Nhân vật:
+          <select id="sel-char-model">
+            <option value="voxel" selected>🧍 VoxelWarrior (Mới - In-Game)</option>
+            <option value="classic">🧱 Mannequin Cũ (Roblox)</option>
+          </select>
+        </label>
         <label>Giới tính:
           <select id="sel-gender">
             <option value="male" selected>Nam</option>
@@ -117,17 +123,26 @@
       <!-- Dòng 2: Bộ mẫu game chiếm trọn dòng -->
       <div class="sb-row" style="gap: 8px;">
         <span style="color:var(--text-dim);font-size:12px;white-space:nowrap;">Bộ mẫu:</span>
-                <select id="sel-preset" style="flex:1;min-width:0;width:100%;background:#0d1117;border:1px solid var(--panel-border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer;">
+        <select id="sel-preset" style="flex:1;min-width:0;width:100%;background:#0d1117;border:1px solid var(--panel-border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer;">
           <option value="">-- Chọn bộ giáp mẫu trong game --</option>
-          <optgroup label="Giáp Chính Thức (Armor-Roadmap 3.0)">
-            <option value="iron_blade">🗡️ Grade 0: Giáp Sắt (Iron Blade - Minecraft Style)</option>
-            <option value="steel_blade">🗡️ Grade 1: Giáp Thép (Steel Blade)</option>
+          <optgroup label="Giáp Chính Thức (Grade 0 -> Grade 11)">
+            <option value="iron_blade">🗡️ Grade 0: Giáp Sắt (Iron Blade - Sắt)</option>
+            <option value="steel_blade">🗡️ Grade 1: Giáp Thép (Steel Blade - Thép)</option>
             <option value="carbonsteel_blade">🗡️ Grade 2: Giáp Thép Carbon (Carbonsteel Blade)</option>
-            <option value="titanium_blade">🗡️ Grade 3: Giáp Titan (Titanium Blade)</option>
-            <option value="bloodgold">👑 Grade 4: Giáp Huyết Kim (Vermilium - Craft)</option>
+            <option value="titanium_blade">🗡️ Grade 3: Giáp Titan (Titanium Blade - Sát Thủ)</option>
+            <option value="bloodgold">👑 Grade 4: Giáp Huyết Kim (Vermilium / Bloodgold)</option>
+            <option value="cryo_frostgold" selected>❄️ Grade 5: Giáp Bão Tuyết Hoàng Kim (Cryo Frostgold)</option>
+            <option value="radianium">☀️ Grade 6: Giáp Quang Kim (Radianium - Hổ Phách)</option>
+            <option value="necronium">🌿 Grade 7: Giáp Vong Kim (Necronium - Sinh Học)</option>
+            <option value="cryonium">🧊 Grade 8: Giáp Hàn Kim (Cryonium - Băng Ngọc)</option>
+            <option value="umbranium">🌑 Grade 9: Giáp Ám Kim (Umbranium - Hắc Dạ)</option>
+            <option value="crimson_hellfire">🔥 Grade 10: Giáp Nham Thạch (Crimson Hellfire)</option>
+            <option value="spartan_war_god">⚔️ Grade 11: Chiến Thần Spartan (Spartan War God)</option>
           </optgroup>
           <optgroup label="Giáp Đặc Biệt & Thử Nghiệm">
-            <option value="golden_turtle" selected>⭐ Mẫu 1: Giáp Kim Quy Hoàng Triều (Full Set)</option>
+            <option value="vx19_dominus">⚡ Chiến Giáp Titan VX-19 Dominus (Sci-Fi Assault)</option>
+            <option value="mirror_knight">🪞 Hiệp Sĩ Gương Tinh Thể (Crystal Mirror Knight)</option>
+            <option value="golden_turtle">⭐ Mẫu 1: Giáp Kim Quy Hoàng Triều (Full Set)</option>
             <option value="black_tortoise">⭐ Mẫu 2: Giáp Huyền Vũ Chiến Thần (Full Set)</option>
             <option value="warrior_royal">🛡️ Hiệp Sĩ Bạch Kim (Warrior Royal - Thử nghiệm)</option>
           </optgroup>
