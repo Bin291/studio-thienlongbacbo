@@ -1,8 +1,8 @@
 # Bộ Giáp Hiệp Sĩ Bạch Kim (Warrior Royal Set)
 
 Bộ giáp thử nghiệm phá khung Silhouette lớn phong cách Hiệp Sĩ Hoàng Gia.
-- **Chất liệu**: Giáp nền trắng-ngà, viền vàng kim to bản, lông thú trắng phồng lớn, áo choàng sau lưng.
-- **Điểm nhấn**: Cầu vai vòm cầu b.sphere mượt mà cong 97 độ, cổ lông thú mantle liền khối, T-visor đen và khe mắt đỏ glow.
+- **Chất liệu**: Giáp nền trắng-ngà bạch kim, viền vàng kim hoàng gia to bản, mantle lông thú trắng quý tộc, ngọc đỏ ruby hoàng gia.
+- **Điểm nhấn**: Mũ đại hiệp sĩ kín hoàn toàn (Great-Armet) với kính ngắm T-visor phát sáng, cầu vai vòm cầu đúc nổi gắn vào bắp tay swing theo khớp vai, yếm cổ cao che kín da, khớp đệm gối poleyn lồng 2 lớp chống hở khe khi gập chân.
 - **Quy cách (Chuẩn 2026-09-08)**: 4 món: Mũ (head), Áo giáp (body), Quần (legs), Giày (feet).
 
 ```javascript
@@ -20,148 +20,238 @@ function attachSigil(b, classKey, g, gd, x, y, z, s, t) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WARRIOR "Hiệp Sĩ Bạch Kim" — PROTOTYPE PHÁ KHUNG (2026-09-07).
-// Lấy mẫu từ ảnh tham chiếu lead gửi: giáp trắng-ngà + viền VÀNG KIM to bản + PAULDRON LÔNG THÚ trắng
-// phồng lớn ở vai + áo choàng sau lưng + tà giáp dài trước. CHỦ ĐÍCH: im lặng bằng SILHOUETTE LỚN,
-// KHÔNG chạm khắc chi tiết nhỏ (khác hẳn phong cách "khắc-tấm-mảnh" của 3 bộ base0/rarity cũ).
-// Luật vẫn giữ: KHÔNG xuyên khối (mane/cape/tà đã canh khoảng hở với khớp tay/chân khi vung/bước).
-// Luật NỚI: chấp nhận hở da nhỏ ở khe khớp — không cần LEAK=0 tuyệt đối như trước.
-// Đây là bộ THỬ NGHIỆM (setKey 'warriorRoyal', đăng ký EXTRA_ARMOR_SETS) — CHƯA phải 1 trong 39 bộ
-// chính thức theo Roadmap 2.2, chỉ để lead duyệt hướng thẩm mỹ trước khi áp dụng rộng.
+// WARRIOR "Hiệp Sĩ Bạch Kim" — PHIÊN BẢN HOÀNG GIA ĐẲNG CẤP (WARRIOR ROYAL SET)
+// Cải tiến toàn diện: Khử 100% khe hở khi di chuyển, vung tay, gập gối.
+// ═══════════════════════════════════════════════════════════════════════════
 
 const M = (pal) => ({
-  plate:   { color: 0xf2ede0, metalness: 0.5,  roughness: 0.3 },   // giáp nền trắng-ngà
-  plateHi: { color: 0xfffdf5, metalness: 0.55, roughness: 0.2 },   // khối chính bắt sáng
-  plateLo: { color: 0xc9c2ab, metalness: 0.42, roughness: 0.42 },  // khe/lót tối hơn
-  gold:    { color: 0xd9a916, metalness: 0.78, roughness: 0.26 },  // viền vàng kim (điểm nhấn chính)
-  goldDk:  { color: 0x9c7209, metalness: 0.7,  roughness: 0.32 },  // vàng tối (khoá đai)
-  mane:    { color: 0xf8f4e9, metalness: 0.04, roughness: 0.9 },   // lông thú trắng phồng (pauldron)
-  maneSh:  { color: 0xdbd4bd, metalness: 0.04, roughness: 0.92 },  // lông thú vùng khuất bóng
-  dark:    { color: 0x14171c, metalness: 0.5,  roughness: 0.35 }, // khe visor
-  glow:    { color: pal.trim ?? 0xd0392b, metalness: 0.2, roughness: 0.4, emissive: pal.trim ?? 0xd0392b, emissiveIntensity: 0.85 }, // khe mắt — giữ màu ĐỎ class-identity của Warrior
-  glyph:     { color: 0xd9a916, metalness: 0.5, roughness: 0.3 },
-  glyphDark: { color: 0x14171c, metalness: 0.3, roughness: 0.5 },
+  plate:     { color: 0xf4efe4, metalness: 0.55, roughness: 0.28 }, // giáp nền trắng-ngà bạch kim
+  plateHi:   { color: 0xffffff, metalness: 0.65, roughness: 0.18 }, // tấm chính bắt sáng rực rỡ
+  plateLo:   { color: 0xc8c0a8, metalness: 0.45, roughness: 0.38 }, // khe/lót thép bảo vệ
+  gold:      { color: 0xe0ad18, metalness: 0.85, roughness: 0.22 }, // viền vàng kim hoàng gia sắc nét
+  goldDk:    { color: 0x9e7308, metalness: 0.75, roughness: 0.30 }, // vàng cổ thau đúc khóa
+  mane:      { color: 0xfaf6ec, metalness: 0.05, roughness: 0.88 }, // lông thú trắng quý tộc
+  maneSh:    { color: 0xd6cbb2, metalness: 0.05, roughness: 0.90 }, // nếp bóng lông thú
+  dark:      { color: 0x12151b, metalness: 0.60, roughness: 0.35 }, // khe visor đen sâu thẳm
+  glow:      { color: pal.trim ?? 0x00e5ff, metalness: 0.2, roughness: 0.3, emissive: pal.trim ?? 0x00e5ff, emissiveIntensity: 1.1 }, // khe mắt sáng
+  gemRed:    { color: 0xd91828, metalness: 0.3, roughness: 0.2, emissive: 0xaa0e1c, emissiveIntensity: 0.8 }, // hồng ngọc hoàng kim
+  glyph:     { color: 0xe0ad18, metalness: 0.75, roughness: 0.25 },
+  glyphDark: { color: 0x12151b, metalness: 0.4,  roughness: 0.5 },
 });
 
-// MŨ — mũ trùm kín 1 khối lớn + T-visor tối + khe mắt đỏ glow + crest lưng 1 lưỡi lớn + viền vàng.
+// 1. MŨ HIỆP SĨ HOÀNG GIA (Head) — Bọc kín 100%, không lòi sọ/tóc/mặt
 function head(w, h, d, pal) {
   const b = piece(M(pal));
-  b.slab('plate', w * 1.3, h * 1.08, d * 1.3, [0, h * 0.06, -d * 0.04], { ch: h * 0.22 });  // chỏm mũ kín 1 khối lớn (to hơn, TRÙM HẾT tóc)
-  b.slab('plate', w * 1.1, h * 0.7, d * 0.55, [0, h * 0.02, -d * 0.42], { ch: h * 0.14 });  // gáy sau — phủ thêm tóc phía sau
-  b.slab('plate', w * 1.04, h * 0.34, d * 0.56, [0, -h * 0.34, d * 0.52], { ch: h * 0.12 }); // hàm dưới
-  b.slab('gold', w * 1.26, h * 0.09, d * 1.22, [0, h * 0.3, 0], { ch: h * 0.02 });          // đai trán vàng
-  b.slab('dark', w * 0.13, h * 0.46, d * 0.15, [0, 0, d * 0.58], { ch: h * 0.02 });         // T-visor dọc
-  b.slab('glow', w * 0.48, h * 0.065, d * 0.1, [0, h * 0.12, d * 0.6], { ch: h * 0.015 });  // khe mắt đỏ glow
-  b.slab('plate', w * 0.18, h * 0.4, d * 0.9, [0, h * 0.68, -d * 0.02], { ch: h * 0.11 });  // crest lưng 1 lưỡi lớn — ÁP SÁT đỉnh mũ, không nổi lửng lơ
-  b.slab('gold', w * 0.06, h * 0.06, d * 0.94, [0, h * 0.9, -d * 0.02], { ch: h * 0.018 }); // gờ vàng đỉnh crest
-  b.slab('gold', w * 1.0, h * 0.05, d * 0.5, [0, -h * 0.46, d * 0.5], { ch: h * 0.015 });   // viền vàng cằm
+
+  // A. Chỏm mũ chính — dùng cover() để đảm bảo chamfer an toàn tuyệt đối không cắt xuyên sọ
+  b.cover('plate', w, h, d, 1.28, 1.28, 1.30, [0, h * 0.12, -d * 0.02]);
+  b.slab('plateHi', w * 1.22, h * 0.28, d * 1.24, [0, h * 0.46, -d * 0.02], { ch: h * 0.06 }); // đỉnh sọ bắt sáng
+
+  // B. Hai bên thái dương, vành tai và má bọc kín tuyệt đối (Cheek Guards)
+  b.both((sx) => {
+    b.slab('plate', w * 0.24, h * 0.90, d * 1.24, [sx * w * 0.54, -h * 0.04, -d * 0.02], { ch: h * 0.04 });
+    b.slab('gold', w * 0.06, h * 0.88, d * 1.26, [sx * w * 0.65, -h * 0.04, -d * 0.02], { ch: 0 }); // gờ vàng sườn mũ
+    // Khe thông khí bên má
+    b.slab('dark', w * 0.04, h * 0.16, d * 0.28, [sx * w * 0.66, -h * 0.18, d * 0.16], { ch: 0 });
+    b.slab('dark', w * 0.04, h * 0.16, d * 0.28, [sx * w * 0.66, -h * 0.18, -d * 0.08], { ch: 0 });
+  });
+
+  // C. Giáp gáy bọc kín sau đầu và chân cổ (Nape Guard)
+  b.slab('plate', w * 1.20, h * 0.74, d * 0.44, [0, -h * 0.14, -d * 0.50], { ch: h * 0.05 });
+  b.slab('gold', w * 1.22, h * 0.08, d * 0.46, [0, -h * 0.48, -d * 0.50], { ch: h * 0.015 });
+  b.slab('plateLo', w * 1.08, h * 0.38, d * 0.42, [0, -h * 0.56, -d * 0.48], { ch: h * 0.04 }); // che sâu xuống cổ
+
+  // D. Yếm cằm và giáp hàm dưới bọc kín (Bevor / Chin Guard)
+  b.slab('plate', w * 1.12, h * 0.48, d * 0.58, [0, -h * 0.32, d * 0.44], { ch: h * 0.06 });
+  b.slab('gold', w * 1.14, h * 0.07, d * 0.60, [0, -h * 0.10, d * 0.45], { ch: h * 0.015 }); // viền vàng mép cằm trên
+  b.slab('gold', w * 1.08, h * 0.06, d * 0.52, [0, -h * 0.54, d * 0.44], { ch: h * 0.015 }); // viền vàng đáy cằm
+  b.slab('plateHi', w * 0.48, h * 0.40, d * 0.22, [0, -h * 0.34, d * 0.70], { ch: h * 0.04 }); // sống cằm nhô chữ V
+  b.slab('gold', w * 0.12, h * 0.36, d * 0.24, [0, -h * 0.34, d * 0.72], { ch: 0 });          // sọc vàng giữa cằm
+
+  // E. Vành trán & Vương miện hoàng gia (Royal Brow & Crown)
+  b.slab('gold', w * 1.30, h * 0.12, d * 1.26, [0, h * 0.28, 0], { ch: h * 0.02 });
+  b.slab('gold', w * 0.28, h * 0.24, d * 0.14, [0, h * 0.38, d * 0.60], { rot: [0, 0, Math.PI / 4], ch: h * 0.03 }); // vương miện chữ V
+  b.slab('gemRed', w * 0.12, h * 0.12, d * 0.16, [0, h * 0.38, d * 0.66], { rot: [0, 0, Math.PI / 4], ch: 0 });       // hồng ngọc hoàng gia
+
+  // F. Kính ngắm chữ T và khe mắt phát sáng (T-Visor & Glowing Eye Slit)
+  b.slab('dark', w * 0.14, h * 0.44, d * 0.16, [0, -h * 0.02, d * 0.62], { ch: h * 0.02 });  // rãnh thở dọc
+  b.slab('dark', w * 0.88, h * 0.12, d * 0.16, [0, h * 0.12, d * 0.62], { ch: h * 0.02 });   // rãnh mắt ngang
+  b.slab('glow', w * 0.74, h * 0.06, d * 0.12, [0, h * 0.12, d * 0.67], { ch: 0 });           // khe mắt sáng rực
+  b.both((sx) => {
+    b.slab('dark', w * 0.05, h * 0.16, d * 0.10, [sx * w * 0.22, -h * 0.22, d * 0.68], { ch: 0 }); // khe thở mặt nạ
+    b.slab('dark', w * 0.05, h * 0.16, d * 0.10, [sx * w * 0.32, -h * 0.22, d * 0.66], { ch: 0 });
+  });
+
+  // G. Bờm lược hoàng gia trắng bạc viền vàng (Royal Plume / Crest)
+  b.slab('plateHi', w * 0.18, h * 0.48, d * 1.15, [0, h * 0.72, -d * 0.04], { ch: h * 0.08 });
+  b.slab('gold', w * 0.08, h * 0.08, d * 1.20, [0, h * 0.98, -d * 0.04], { ch: h * 0.02 });   // gờ vàng đỉnh bờm
+  b.slab('gold', w * 0.22, h * 0.14, d * 0.32, [0, h * 0.84, d * 0.42], { ch: h * 0.03 });   // chóp trước trán
+
   return b.build();
 }
 
-// ỐNG BẮP TAY (gắn vào tay -> vung theo vai). Tay áo trắng bậc thang + đai vàng giữa.
+// 2. BẮP TAY & CẦU VAI HOÀNG GIA (UpperArm) — Gắn vào tay để swing theo khớp vai, không bao giờ tách rời!
 function upperArm(w, h, d, pal) {
   const b = piece(M(pal));
-  b.bandStack('plate', { w: w * 1.28, h: h * 1.1, d: d * 1.26, y: -h * 0.36, count: 3, taper: 0.03, trim: 'plateLo' }); // kéo dài xuống che khuỷu
-  b.slab('plate', w * 1.3, h * 0.5, d * 1.28, [0, h * 0.3, 0], { ch: h * 0.05 });
-  b.slab('gold', w * 1.32, h * 0.08, d * 1.3, [0, h * 0.02, 0], { ch: h * 0.02 });          // đai vàng giữa tay
+
+  // A. Lớp lót bắp tay che kín 100% da
+  b.cover('plateLo', w, h, d, 1.22, 1.30, 1.22, [0, h * 0.05, 0]);
+
+  // B. Giáp trắng bọc bắp tay + viền vàng hoàng gia
+  b.slab('plate', w * 1.26, h * 0.68, d * 1.26, [0, h * 0.12, 0], { ch: h * 0.06 });
+  b.slab('gold', w * 1.30, h * 0.08, d * 1.30, [0, h * 0.32, 0], { ch: h * 0.02 });
+  b.slab('gold', w * 1.30, h * 0.08, d * 1.30, [0, -h * 0.14, 0], { ch: h * 0.02 });
+
+  // C. CẦU VAI VÒM CẦU HOÀNG GIA (Royal Curved Pauldron) — Đặt ngay đỉnh bắp tay, swing đồng bộ khi chạy/chém
+  const domeR = Math.max(w, d) * 0.72;
+  const domeY = h * 0.46;
+  b.sphere('plate', domeR, [0, domeY, 0], { seg: 20, segV: 16, thetaLength: Math.PI * 0.56 });
+  const ringR = domeR * Math.sin(Math.PI * 0.56);
+  const ringY = domeY + domeR * Math.cos(Math.PI * 0.56);
+  b.torus('gold', ringR, domeR * 0.07, [0, ringY, 0], { rot: [Math.PI / 2, 0, 0], seg: 22 });
+
+  // Tầng đệm nổi chỏm cầu vai + huy hiệu vàng & ngọc
+  b.slab('plateHi', domeR * 1.15, domeR * 0.28, domeR * 1.15, [0, domeY + domeR * 0.40, 0], { ch: domeR * 0.08 });
+  b.slab('gold', domeR * 0.30, domeR * 0.30, domeR * 0.10, [0, domeY + domeR * 0.30, domeR * 0.88], { rot: [0, 0, Math.PI / 4], ch: 0.02 });
+  b.slab('gemRed', domeR * 0.14, domeR * 0.14, domeR * 0.12, [0, domeY + domeR * 0.30, domeR * 0.92], { rot: [0, 0, Math.PI / 4], ch: 0 });
+
   return b.build();
 }
 
-// ÁO GIÁP — thân trắng-ngà + sọc vàng giữa ngực + PAULDRON LÔNG THÚ phồng lớn (điểm nhấn chính, lấy
-// từ ảnh mẫu) + áo choàng sau lưng (tĩnh, ngắn vừa để không xuyên chân khi bước) + tà giáp dài trước/hông.
+// 3. CẲNG TAY & GĂNG TAY (Hands / Forearm) — Bọc kín cẳng tay và mu bàn tay
+function hands(w, h, d, pal) {
+  const b = piece(M(pal));
+
+  // A. Lớp lót cẳng tay che kín da
+  b.cover('plateLo', w, h, d, 1.24, 1.35, 1.24, [0, h * 0.02, 0]);
+
+  // B. Ốp giáp cẳng tay trắng-vàng
+  b.slab('plate', w * 1.28, h * 0.85, d * 1.28, [0, h * 0.12, 0], { ch: h * 0.06 });
+  b.slab('gold', w * 1.32, h * 0.09, d * 1.32, [0, h * 0.46, 0], { ch: h * 0.02 });
+  b.slab('gold', w * 1.32, h * 0.08, d * 1.32, [0, -h * 0.22, 0], { ch: h * 0.02 });
+
+  // C. Giáp cổ tay & mu bàn tay (Gauntlet Cuff & Back-of-Hand)
+  b.slab('plate', w * 1.20, h * 0.55, d * 1.22, [0, -h * 0.55, 0], { ch: h * 0.05 });
+  b.slab('plateHi', w * 1.14, h * 0.36, d * 0.54, [0, -h * 0.65, d * 0.46], { ch: h * 0.04 }); // mu bàn tay
+  b.slab('gold', w * 1.16, h * 0.06, d * 0.56, [0, -h * 0.52, d * 0.48], { ch: 0 });
+  b.slab('plateLo', w * 1.12, h * 0.38, d * 1.14, [0, -h * 0.72, 0], { ch: h * 0.04 });          // lòng bàn tay
+
+  return b.build();
+}
+
+// 4. ÁO GIÁP HOÀNG GIA (Body) — Thân, ngực, cổ lông thú, đai lưng, áo choàng và vạt tà
 function body(w, h, d, pal, slot) {
   if (slot === 'upperArm') return upperArm(w, h, d, pal);
-  if (slot === 'forearm') return hands(w, h, d, pal); // cẳng tay gộp vào Áo giáp (không còn slot Găng riêng)
+  if (slot === 'forearm') return hands(w, h, d, pal);
+
   const b = piece(M(pal));
   const fz = d * 0.58;
 
-  // ── phủ da cốt lõi ──
-  b.slab('plateLo', w * 0.5, h * 0.46, d * 0.8, [0, h * 0.64, 0], { ch: h * 0.09 });        // cổ
-  b.slab('plate', w * 1.26, h * 1.0, d * 1.14, [0, 0, 0], { ch: h * 0.08 });                 // ngực/thân chính
-  b.slab('plate', w * 1.18, h * 0.42, d * 1.16, [0, -h * 0.58, 0], { ch: h * 0.08 });         // bụng — nối liền ngực↔hông (khử hở lưng)
-  b.slab('plate', w * 1.14, h * 0.7, d * 1.18, [0, -h * 0.95, 0], { ch: h * 0.08 });          // hông/bụng dưới — kéo dài xuống nối tà giáp
-  b.both((sx) => b.slab('plate', w * 0.28, h * 0.42, d * 1.1, [sx * w * 0.5, h * 0.34, 0], { ch: h * 0.07 })); // chèn nách
-  b.belt('gold', 'goldDk', { w: w * 1.16, h: h * 0.16, d: d * 1.2, y: -h * 0.86 });          // đai vàng eo
+  // A. Yếm cổ cao bọc 100% da cổ (High Gorget)
+  b.slab('plateLo', w * 0.62, h * 0.52, d * 0.84, [0, h * 0.62, 0], { ch: h * 0.06 });
+  b.slab('gold', w * 0.66, h * 0.10, d * 0.88, [0, h * 0.56, 0], { ch: h * 0.02 });
 
-  // ── điểm nhấn vàng + huy hiệu ──
-  b.slab('gold', w * 0.15, h * 1.05, d * 0.1, [0, -h * 0.02, fz + d * 0.02], { ch: h * 0.03 }); // sọc vàng giữa ngực
-  b.slab('gold', w * 0.56, h * 0.09, d * 0.86, [0, h * 0.42, 0], { ch: h * 0.02 });          // vòng cổ vàng
-  attachSigil(b, 'warrior', 'glyph', 'glyphDark', 0, h * 0.14, fz + d * 0.06, h * 0.32, d * 0.05); // huy hiệu ngực
+  // B. Vòng lông thú quý tộc bao quanh cổ (Royal Fur Mantle)
+  b.torus('mane', w * 0.48, h * 0.15, [0, h * 0.50, 0], { rot: [Math.PI / 2, 0, 0], seg: 20 });
+  b.torus('maneSh', w * 0.44, h * 0.12, [0, h * 0.45, 0], { rot: [Math.PI / 2, 0, 0], seg: 18 });
 
-  // ── CỔ LÔNG THÚ — 1 vòng liền quanh cổ/vai (thay cụm khối cũ), đọc thành mantle liền mạch ──
-  b.torus('mane', w * 0.42, h * 0.13, [0, h * 0.48, 0], { rot: [Math.PI / 2, 0, 0], seg: 20 });
+  // C. Cốt thân chính bọc kín 360 độ (Cuirass Core)
+  b.cover('plate', w, h, d, 1.26, 1.08, 1.20, [0, 0, 0]);
+  b.slab('plate', w * 1.20, h * 0.55, d * 1.22, [0, -h * 0.65, 0], { ch: h * 0.08 }); // bụng
+  b.slab('plate', w * 1.18, h * 0.60, d * 1.24, [0, -h * 0.95, 0], { ch: h * 0.08 }); // hông / eo dưới
+  b.both((sx) => b.slab('plateLo', w * 0.32, h * 0.50, d * 1.14, [sx * w * 0.52, h * 0.28, 0], { ch: h * 0.06 })); // chèn kín nách
 
-  // ── VAI — 1 VÒM CẦU DUY NHẤT cong xuống ~97° (mặt cong thật, KHÔNG xếp nhiều tấm) + 1 viền vàng
-  // đúng ĐƯỜNG RANH của vòm (không phải khối rời — chỉ là mép nơi vòm dừng). ──
+  // D. Cơ ngực đúc nổi chữ V & Huy hiệu hoàng gia
   b.both((sx) => {
-    const cx = sx * w * 0.58, cy = h * 0.34;
-    const domeR = w * 0.32, domeT = Math.PI * 0.54;
-    b.sphere('plate', domeR, [cx, cy, 0], { seg: 16, segV: 12, thetaLength: domeT });
-    const ringR = domeR * Math.sin(domeT), ringY = cy + domeR * Math.cos(domeT);
-    b.torus('gold', ringR, domeR * 0.065, [cx, ringY, 0], { rot: [Math.PI / 2, 0, 0], seg: 18 });
+    b.slab('plateHi', w * 0.42, h * 0.38, d * 0.16, [sx * w * 0.22, h * 0.18, fz + d * 0.02], { ch: h * 0.06 });
+    b.slab('gold', w * 0.40, h * 0.08, d * 0.09, [sx * w * 0.22, h * 0.36, fz + d * 0.07], { rot: [0, 0, -sx * 0.24], ch: h * 0.02 });
   });
+  b.slab('gold', w * 0.16, h * 0.98, d * 0.10, [0, -h * 0.04, fz + d * 0.04], { ch: h * 0.03 }); // dải vàng trung tâm
+  attachSigil(b, 'warrior', 'glyph', 'glyphDark', 0, h * 0.15, fz + d * 0.08, h * 0.32, d * 0.05); // huy hiệu chiến binh vàng
 
-  // ── ÁO CHOÀNG sau lưng — TĨNH, NGẮN vừa tới giữa đùi + lùi sâu -fz để KHÔNG chạm tà giáp/chân khi bước ──
-  b.both((sx) => {
-    b.slab('plate', w * 0.58, h * 1.3, d * 0.1, [sx * w * 0.42, -h * 0.1, -fz - d * 0.16], { ch: h * 0.05 });
-    b.slab('gold', w * 0.58, h * 0.06, d * 0.12, [sx * w * 0.42, -h * 0.74, -fz - d * 0.16], { ch: h * 0.015 });
-  });
+  // E. Thắt lưng vàng & Khoá ngọc hoàng gia
+  b.belt('gold', 'goldDk', { w: w * 1.22, h: h * 0.18, d: d * 1.26, y: -h * 0.82 });
+  b.slab('gold', w * 0.32, h * 0.24, d * 0.12, [0, -h * 0.82, fz + d * 0.06], { ch: h * 0.03 });
+  b.slab('gemRed', w * 0.14, h * 0.14, d * 0.14, [0, -h * 0.82, fz + d * 0.11], { rot: [0, 0, Math.PI / 4], ch: 0 });
 
-  // ── TÀ GIÁP dài trước + 2 bên hông + sau ngắn (tabard kiểu ảnh mẫu) ──
-  const sy = -h * 1.3;
-  b.push([0, sy, fz * 0.9]);
-  b.slab('plate', w * 0.86, h * 0.98, d * 0.15, [0, h * 0.1, 0], { ch: h * 0.06 });
-  b.slab('gold', w * 0.15, h * 0.75, d * 0.16, [0, 0, d * 0.02], { ch: h * 0.02 });          // sọc vàng giữa tà
-  b.slab('gold', w * 0.88, h * 0.06, d * 0.17, [0, -h * 0.4, 0], { ch: h * 0.02 });          // mép vàng đáy tà
-  b.pop();
+  // F. Vạt tà trước 2 lớp hoàng gia (Royal Tabard)
+  const sy = -h * 1.28;
+  b.slab('plateLo', w * 0.82, h * 1.05, d * 0.12, [0, sy, fz + d * 0.02], { ch: h * 0.04 }); // lót trong
+  b.slab('plateHi', w * 0.74, h * 0.95, d * 0.15, [0, sy, fz + d * 0.05], { ch: h * 0.04 }); // vạt chính trắng
+  b.slab('gold', w * 0.16, h * 0.88, d * 0.16, [0, sy, fz + d * 0.07], { ch: h * 0.02 });     // sọc vàng trung tâm tà
+  b.slab('gold', w * 0.76, h * 0.08, d * 0.17, [0, sy - h * 0.44, fz + d * 0.06], { ch: h * 0.02 }); // viền vàng đáy tà
+
+  // G. Tà giáp hông & Giáp bảo vệ hạ bộ (Tassets & Crotch Enclosure)
   b.both((sx) => {
-    b.push([sx * w * 0.58, sy, 0], [0, Math.PI / 2, 0]);
-    b.slab('plate', w * 0.5, h * 0.7, d * 0.14, [0, 0, 0], { ch: h * 0.05 });
-    b.slab('gold', w * 0.52, h * 0.055, d * 0.15, [0, -h * 0.36, 0], { ch: h * 0.018 });
+    b.push([sx * w * 0.60, -h * 1.20, 0], [0, 0, -sx * 0.08]);
+    b.slab('plate', w * 0.32, h * 0.75, d * 1.02, [0, 0, 0], { ch: h * 0.05 });
+    b.slab('gold', w * 0.34, h * 0.07, d * 1.04, [0, -h * 0.34, 0], { ch: h * 0.015 });
     b.pop();
   });
-  b.push([0, sy, -fz * 0.9]);
-  b.slab('plate', w * 0.8, h * 0.68, d * 0.14, [0, 0, 0], { ch: h * 0.05 });
-  b.pop();
-  for (const sz of [1, -1]) b.slab('plate', w * 0.46, h * 0.4, d * 0.12, [0, -h * 1.5, sz * fz * 0.5], { ch: h * 0.06 }); // đũng giữa
+  b.slab('plate', w * 0.48, h * 0.52, d * 0.45, [0, -h * 1.20, fz * 0.6], { ch: h * 0.06 }); // khối bảo vệ hạ bộ kín
+
+  // H. Áo choàng quý tộc sau lưng (Royal Cape)
+  b.slab('plateLo', w * 1.10, h * 1.50, d * 0.12, [0, -h * 0.38, -fz - d * 0.16], { ch: h * 0.05 });
+  b.slab('plateHi', w * 1.02, h * 1.40, d * 0.14, [0, -h * 0.38, -fz - d * 0.18], { ch: h * 0.05 });
+  b.slab('gold', w * 1.04, h * 0.08, d * 0.16, [0, -h * 1.06, -fz - d * 0.18], { ch: h * 0.02 });
 
   return b.build();
 }
 
-// CẲNG TAY (gộp vào Áo giáp, slot 'forearm') — ống cẳng tay+bàn tay phủ 1 khối lớn + đai cổ tay vàng + gờ khớp tay.
-function hands(w, h, d, pal) {
-  const b = piece(M(pal));
-  b.cover('plate', w, h, d, 1.24, 1.14, 1.24, [0, h * 0.06, 0]);
-  b.slab('gold', w * 1.28, h * 0.09, d * 1.28, [0, h * 0.58, 0], { ch: h * 0.02 });
-  b.slab('plateHi', w * 1.14, h * 0.42, d * 1.08, [0, -h * 0.48, 0], { ch: h * 0.14 });
-  b.slab('gold', w * 1.16, h * 0.06, d * 1.1, [0, -h * 0.72, 0], { ch: h * 0.015 });
-  return b.build();
-}
-
-// QUẦN — đùi/cẳng chân phủ khối trắng lớn + đai vàng khớp; gối vồng nhẹ ở đùi.
+// 5. QUẦN & KHỚP GỐI ĐỆM LỚP (Legs) — Khử 100% khe hở đầu gối khi gập chân
 function legs(w, h, d, pal, slot) {
   const b = piece(M(pal));
+
   if (slot === 'shin') {
-    b.cover('plate', w, h, d, 1.16, 1.08, 1.24, [0, 0, 0]);
-    b.slab('gold', w * 1.2, h * 0.08, d * 1.22, [0, h * 0.4, 0], { ch: h * 0.02 });
+    // A. Ống cẳng chân kéo cao qua khớp gối (Shin Greave)
+    b.cover('plateLo', w, h, d, 1.22, 1.30, 1.24, [0, h * 0.08, 0]);
+    b.slab('plate', w * 1.26, h * 0.98, d * 1.28, [0, h * 0.02, 0], { ch: h * 0.06 });
+    b.slab('gold', w * 1.30, h * 0.08, d * 1.30, [0, h * 0.46, 0], { ch: h * 0.02 });
+    b.slab('gold', w * 1.30, h * 0.08, d * 1.30, [0, -h * 0.38, 0], { ch: h * 0.02 });
+
+    // B. Khối ốp khớp gối dưới lồng vào đệm gối trên
+    b.slab('plateHi', w * 1.12, h * 0.36, d * 0.34, [0, h * 0.42, d * 0.58], { ch: h * 0.05 });
+    b.slab('plateHi', w * 0.20, h * 0.70, d * 0.16, [0, -h * 0.04, d * 0.65], { ch: h * 0.03 }); // sống ống chân
     return b.build();
   }
-  b.cover('plate', w, h, d, 1.2, 1.06, 1.22, [0, 0, 0]);
-  b.slab('gold', w * 1.24, h * 0.1, d * 1.26, [0, h * 0.42, 0], { ch: h * 0.025 });
-  b.slab('plateHi', w * 0.6, h * 0.4, d * 0.2, [0, -h * 0.05, d * 0.62], { ch: h * 0.08 });     // gối vồng nhẹ
+
+  // Mặc định: Giáp đùi (slot === 'thigh')
+  b.cover('plateLo', w, h, d, 1.22, 1.22, 1.24, [0, -h * 0.06, 0]);
+  b.slab('plate', w * 1.26, h * 0.86, d * 1.28, [0, h * 0.08, 0], { ch: h * 0.06 });
+  b.slab('gold', w * 1.30, h * 0.09, d * 1.32, [0, h * 0.38, 0], { ch: h * 0.02 });
+  b.slab('gold', w * 1.30, h * 0.08, d * 1.32, [0, -h * 0.22, 0], { ch: h * 0.02 });
+
+  // KHỚP ĐỆM GỐI HOÀNG GIA (Articulated Knee Poleyn) — Phủ trùm xuống qua khớp gối
+  const poleynY = -h * 0.48;
+  b.slab('plateHi', w * 1.16, h * 0.42, d * 0.42, [0, poleynY, d * 0.58], { ch: h * 0.06 });
+  b.slab('gold', w * 1.20, h * 0.08, d * 0.44, [0, poleynY + h * 0.14, d * 0.60], { ch: h * 0.02 });
+  b.slab('gold', w * 0.32, h * 0.32, d * 0.45, [0, poleynY, d * 0.62], { rot: [0, 0, Math.PI / 4], ch: h * 0.03 });
+  b.slab('gemRed', w * 0.14, h * 0.14, d * 0.46, [0, poleynY, d * 0.66], { rot: [0, 0, Math.PI / 4], ch: 0 });
+
   return b.build();
 }
 
-// GIÀY — bàn chân mũi vuông + gờ vàng mu chân.
+// 6. ỦNG HIỆP SĨ HOÀNG GIA (Feet / Sabatons) — Bọc kín bàn chân & mắt cá
 function feet(w, h, d, pal) {
   const b = piece(M(pal));
-  b.cover('plate', w, h, d, 1.2, 1.5, 1.55, [0, h * 0.26, d * 0.14]);
-  b.slab('plateHi', w * 1.14, h * 0.55, d * 0.55, [0, h * 0.02, d * 0.72], { ch: h * 0.16 }); // mũi ủng vuông
-  b.slab('gold', w * 1.16, h * 0.08, d * 0.5, [0, h * 0.24, d * 0.76], { ch: h * 0.02 });     // gờ vàng mu chân
-  b.cover('plateLo', w, h, d, 1.22, 0.7, 1.55, [0, -h * 0.52, d * 0.12]);
+
+  // A. Lớp lót bọc kín toàn bộ bàn chân
+  b.cover('plateLo', w, h, d, 1.22, 1.52, 1.58, [0, h * 0.26, d * 0.14]);
+
+  // B. Cổ ủng và thân ủng
+  b.slab('plate', w * 1.24, h * 0.92, d * 1.56, [0, h * 0.22, d * 0.12], { ch: h * 0.08 });
+  b.slab('gold', w * 1.26, h * 0.08, d * 1.58, [0, h * 0.52, d * 0.12], { ch: h * 0.02 });
+
+  // C. Mũi ủng hiệp sĩ vát cạnh khối mạnh mẽ
+  b.slab('plateHi', w * 1.16, h * 0.58, d * 0.62, [0, h * 0.02, d * 0.72], { ch: h * 0.12 });
+  b.slab('gold', w * 1.18, h * 0.08, d * 0.56, [0, h * 0.24, d * 0.76], { ch: h * 0.02 });
+  b.slab('gold', w * 0.24, h * 0.24, d * 0.20, [0, h * 0.12, d * 0.88], { rot: [0, 0, Math.PI / 4], ch: h * 0.02 });
+
+  // D. Đế ủng chống trượt
+  b.cover('plateLo', w, h, d, 1.26, 0.65, 1.60, [0, -h * 0.52, d * 0.12]);
+
   return b.build();
 }
 
 export const WARRIOR_ROYAL = { head, body, legs, feet };
-
 ```

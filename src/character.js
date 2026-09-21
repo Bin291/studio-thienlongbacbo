@@ -296,6 +296,10 @@ export function createCharacter(opts = {}) {
     leftLeg.shin.scale.set(sLeg, 1.0, sLeg);
     rightLeg.shin.scale.set(sLeg, 1.0, sLeg);
 
+    const sHead = cfg.hideHair ? 0.92 : 1.0;
+    if (head) {
+      head.scale.set(sHead, sHead, sHead);
+    }
     if (cfg.hideHair && hairGroup) {
       hairGroup.visible = false;
     } else if (hairGroup) {

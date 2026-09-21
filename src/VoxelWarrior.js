@@ -203,14 +203,18 @@ function buildHair(hair, gender, style, hw, color) {
 function buildHead(P, gender, style) {
   const head = joint('head', 0, 0.61, 0); // pivot cổ (hạ từ 0.72 → sát vai, khớp cổ ngắn — fix 2026-09-18)
   const hw = 0.42;
-  head.add(fbox(hw, 0.42, hw, P.skin, 0, 0.24, 0, { name: 'face' }));
+  const face = fbox(hw, 0.42, hw, P.skin, 0, 0.24, 0, { name: 'face' });
+  head.add(face);
+  head.userData.face = face;
   // (ĐÃ BỎ khối hàm/cằm nhô ra trước — theo feedback, trông như khối chữ nhật thừa ở cằm.)
   // Mặt: lông mày (màu tóc) + mắt. Nữ: lông mày mảnh hơn.
   const browH = gender === 'female' ? 0.035 : 0.05;
+  const brows = new THREE.Group(); brows.name = 'browsGroup'; head.add(brows);
   for (const sx of [-1, 1]) {
-    head.add(fbox(0.13, browH, 0.05, P.hair, sx * 0.10, 0.30, hw * 0.5)); // lông mày
+    brows.add(fbox(0.13, browH, 0.05, P.hair, sx * 0.10, 0.30, hw * 0.5)); // lông mày
     head.add(fbox(0.09, 0.08, 0.04, PAL.eye, sx * 0.10, 0.22, hw * 0.51)); // mắt
   }
+  head.userData.brows = brows;
   // GOM tóc vào 1 group để mũ giáp có thể ẨN khi đội (setArmorOcclusion → hideHair).
   const hair = new THREE.Group(); hair.name = 'hairGroup'; head.add(hair);
   buildHair(hair, gender, style | 0, hw, P.hair);
@@ -564,7 +568,18 @@ export class VoxelWarrior {
   // Gọi bởi setCharacterArmor (models/armor.js) sau khi gắn/gỡ giáp mỗi bộ phận.
   setArmorOcclusion(cfg = {}) {
     const vis = (o, v) => { if (o) o.visible = v; };
-    if ('hideHair' in cfg) vis(this.rig.head.userData.hair, !cfg.hideHair);       // đội mũ → ẩn tóc gai
+    if ('hideHair' in cfg) {
+      vis(this.rig.head.userData.hair, !cfg.hideHair);       // đội mũ → ẩn tóc gai
+      vis(this.rig.head.userData.brows, !cfg.hideHair);      // đội mũ → ẩn lông mày (tránh đâm qua visor/mũ)
+      vis(this._classCos, !cfg.hideHair);                    // đội mũ kín → ẩn phụ kiện đầu (xì gà...)
+      if (this.rig.head.userData.face) {
+        if (cfg.hideHair) {
+          this.rig.head.userData.face.scale.set(0.94, 0.96, 0.94);
+        } else {
+          this.rig.head.userData.face.scale.set(1.0, 1.0, 1.0);
+        }
+      }
+    }
     if ('slimTorso' in cfg) { vis(this._torsoCos, !cfg.slimTorso); vis(this._belt, !cfg.slimTorso); } // giáp thân → ẩn ngực trần + đai/váy
     if ('slimArms' in cfg) {                                                       // giáp tay → ẩn băng quấn + da vai (khối cam)
       vis(this.rig.la.elbow.userData.wraps, !cfg.slimArms);
