@@ -25,6 +25,10 @@ import mirrorKnightMd from '../presets/mirror-knight.md?raw';
 import goldenTurtleMd from '../presets/golden-turtle.md?raw';
 import blackTortoiseMd from '../presets/black-tortoise.md?raw';
 import warriorRoyalMd from '../presets/warrior-royal.md?raw';
+import base0HeavyGunMd from '../presets/base0-heavygun.md?raw';
+import base0LightGunMd from '../presets/base0-lightgun.md?raw';
+import base0WizardMd from '../presets/base0-wizard.md?raw';
+import base0SummonersMd from '../presets/base0-summoners.md?raw';
 
 import JSZip from 'jszip';
 
@@ -634,6 +638,12 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
 
 // ════════════════ 6. BỘ PRESET MẪU ════════════════
 const PRESET_MD = {
+  // Base 0 theo CLASS (bo khoi dau rieng tung lop, 2026-09-21)
+  "base0_heavygun": base0HeavyGunMd,
+  "base0_lightgun": base0LightGunMd,
+  "base0_wizard": base0WizardMd,
+  "base0_summoners": base0SummonersMd,
+
   // Giáp Chính Thức (Grade 0 -> Grade 11)
   "iron_blade": grade0IronBladeMd,
   "steel_blade": grade1SteelBladeMd,
