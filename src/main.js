@@ -340,54 +340,67 @@ rebuildCharacter();
 function extractJsFromMarkdown(mdText) {
   if (!mdText) return '';
 
-  // 1. Tìm tất cả các khối ```javascript hoặc ```js trên dòng riêng
-  const codeBlockRegex = /(?:^|\n)```(?:javascript|js)\s*\n([\s\S]*?)\n```/gi;
+  // 1. Chuẩn hóa xuống dòng \r\n -> \n
+  let text = mdText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // 2. Gỡ bỏ khối bao bọc ngoài cùng nếu là ````markdown hoặc ```markdown (thường gặp khi copy từ chat AI)
+  text = text.replace(/^`{3,}(?:markdown|md)?[\t ]*\n/i, '');
+  text = text.replace(/\n`{3,}[\t ]*$/i, '');
+
+  // 3. Tìm tất cả các khối ```javascript hoặc ```js (hỗ trợ 3 hoặc nhiều backtick)
+  const jsFenceRegex = /(`{3,})(?:javascript|js)[\t ]*\n([\s\S]*?)\n[\t ]*\1/gi;
   let match;
-  const allBlocks = [];
-  while ((match = codeBlockRegex.exec(mdText)) !== null) {
-    const chunk = match[1].trim();
-    if (chunk) allBlocks.push(chunk);
+  const jsBlocks = [];
+  while ((match = jsFenceRegex.exec(text)) !== null) {
+    const chunk = match[2].trim();
+    if (chunk) jsBlocks.push(chunk);
   }
 
-  // 2. Thử tìm khối ``` bất kỳ nếu chưa thấy js block
-  if (allBlocks.length === 0) {
-    const genericBlockRegex = /(?:^|\n)```[a-z]*\s*\n([\s\S]*?)\n```/gi;
-    while ((match = genericBlockRegex.exec(mdText)) !== null) {
-      const chunk = match[1].trim();
-      if (chunk) allBlocks.push(chunk);
-    }
+  if (jsBlocks.length > 0) {
+    return jsBlocks.join('\n\n');
   }
 
-  if (allBlocks.length > 0) {
-    // Kiểm tra xem có khối nào chứa định nghĩa hàm giáp thật sự không
+  // 4. Thử tìm khối ``` bất kỳ (generic code fence)
+  const genericFenceRegex = /(`{3,})[a-z0-9_-]*[\t ]*\n([\s\S]*?)\n[\t ]*\1/gi;
+  const anyBlocks = [];
+  while ((match = genericFenceRegex.exec(text)) !== null) {
+    const chunk = match[2].trim();
+    if (chunk) anyBlocks.push(chunk);
+  }
+
+  if (anyBlocks.length > 0) {
     const isArmorBlock = (code) => {
-      return /\b(function\s+(?:head|body|legs|feet|hands|buildHead|buildChest|buildWarrior|buildAssassin|buildArcher)|export\s+const\s+[A-Z_]+\s*=\s*\{)/.test(code);
+      return /\b(function\s+(?:head|body|legs|feet|hands|build)|export\s+const\s+[A-Za-z0-9_]+\s*=|export\s+default\s+|const\s+[A-Za-z0-9_]+\s*=\s*\{)/.test(code);
     };
 
-    const armorBlocks = allBlocks.filter(isArmorBlock);
+    const armorBlocks = anyBlocks.filter(isArmorBlock);
     if (armorBlocks.length > 0) {
-      // Ưu tiên khối chứa định nghĩa giáp hoàn chỉnh
       return armorBlocks.join('\n\n');
     }
 
-    // Nếu không có khối nào chứa hàm giáp hoàn chỉnh, kiểm tra xem có code Three.js chạy được không
-    const hasExecutableCode = allBlocks.some((b) => /\b(piece|THREE|box|glow)\b/.test(b) && !b.includes('<tênMón>'));
-    if (!hasExecutableCode) {
-      return ''; // Tài liệu hướng dẫn thuần túy
+    const hasExecutable = anyBlocks.some((b) => /\b(piece|THREE|box|glow|shade|palFor)\b/.test(b));
+    if (hasExecutable) {
+      return anyBlocks.join('\n\n');
     }
-    return allBlocks.join('\n\n');
   }
 
-  // 3. Nếu không có khối code block nào:
-  // Kiểm tra xem có phải là code JS thuần do người dùng dán vào không
-  const hasArmorFns = /\b(function\s+(?:head|body|legs|feet|hands|build)|export\s+function|export\s+const)\b/.test(mdText);
+  // 5. Nếu không có code block nào (hoặc người dùng dán code chay có lẫn chữ giới thiệu ở đầu):
+  // Tìm vị trí dòng code đầu tiên (export, function, const, let, var, import)
+  const codeStartMatch = text.match(/(?:^|\n)\s*(export\s+|function\s+(?:head|body|legs|feet|hands|build)|const\s+[A-Za-z0-9_]+\s*=|var\s+|let\s+)/);
+  if (codeStartMatch) {
+    const startIndex = codeStartMatch.index + (codeStartMatch[0].startsWith('\n') ? 1 : 0);
+    let candidate = text.slice(startIndex).trim();
+    candidate = candidate.replace(/`{3,}[a-z]*/gi, '').replace(/`{3,}/g, '').trim();
+    return candidate;
+  }
+
+  // 6. Kiểm tra xem có hàm giáp nào không
+  const hasArmorFns = /\b(function\s+(?:head|body|legs|feet|hands|build)|export\s+function|export\s+const)\b/.test(text);
   if (!hasArmorFns) {
-    // Không phải code giáp, chỉ là văn bản markdown thông thường
     return '';
   }
 
-  let clean = mdText.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
-  return clean;
+  return text.replace(/`{3,}[a-z]*/gi, '').replace(/`{3,}/g, '').trim();
 }
 
 function removeVietnameseTones(str) {
@@ -490,11 +503,15 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
       .replace(/```/g, '')
       .trim();
 
-    // Chuyển đổi TẤT CẢ các dòng markdown, ghi chú, gạch đầu dòng thành comment để không bao giờ lỗi cú pháp
+    // Chuyển đổi TẤT CẢ các dòng markdown, ghi chú, gạch đầu dòng và văn xuôi thành comment để không bao giờ lỗi cú pháp
     cleanCode = cleanCode
       .split('\n')
       .map((line) => {
         const t = line.trim();
+        if (!t) return line;
+        if (t.startsWith('//') || t.startsWith('/*') || t.startsWith('*')) return line;
+
+        // Bỏ qua dòng markdown syntax
         if (
           t.startsWith('#') ||
           /^(?:---|___|\*\*\*)\s*$/.test(t) ||
@@ -510,6 +527,13 @@ function compileArmorFromCode(userJs, armorName = 'Custom Armor') {
         ) {
           return '// ' + line;
         }
+
+        // Bỏ qua các dòng chứa ký tự tiếng Việt ngoài chuỗi (như 'Bộ giáp...', 'Dưới đây là...')
+        const nonStringPart = t.replace(/(["'`])(?:(?!\1|\\).|\\.)*\1/g, '');
+        if (/[^\x00-\x7F]/.test(nonStringPart)) {
+          return '// ' + line;
+        }
+
         return line;
       })
       .join('\n');
