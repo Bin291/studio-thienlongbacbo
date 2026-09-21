@@ -329,6 +329,9 @@ function rebuildCharacter() {
     character = createCharacter({ appearance: currentAppearance });
   }
   scene.add(character.root);
+  const H = character?.totalHeight || 1.0;
+  controls.target.set(0, H * 0.52, 0);
+  controls.update();
   reapplyCurrentArmor();
 }
 rebuildCharacter();
@@ -880,18 +883,19 @@ if (btnSnapAll) {
       const origCamPos = camera.position.clone();
       const origTarget = controls.target.clone();
 
-      const dist = 3.8;
-      const ty = 0.52;
+      const H = character?.totalHeight || 1.0;
+      const dist = 3.0 + H * 1.0;
+      const ty = H * 0.52;
       const angles = [
         { name: '01_chinh_dien.png', pos: [0, ty, dist], target: [0, ty, 0] },
-        { name: '02_goc_3_4_truoc.png', pos: [dist * 0.65, ty + 0.35, dist * 0.75], target: [0, ty, 0] },
+        { name: '02_goc_3_4_truoc.png', pos: [dist * 0.65, ty + 0.35 * (H / 1.0), dist * 0.75], target: [0, ty, 0] },
         { name: '03_hong_phai.png', pos: [dist, ty, 0.001], target: [0, ty, 0] },
-        { name: '04_goc_3_4_sau.png', pos: [dist * 0.65, ty + 0.35, -dist * 0.75], target: [0, ty, 0] },
+        { name: '04_goc_3_4_sau.png', pos: [dist * 0.65, ty + 0.35 * (H / 1.0), -dist * 0.75], target: [0, ty, 0] },
         { name: '05_mat_sau.png', pos: [0, ty, -dist], target: [0, ty, 0] },
         { name: '06_hong_trai.png', pos: [-dist, ty, 0.001], target: [0, ty, 0] },
-        { name: '07_can_canh_mu.png', pos: [0, 0.85, 1.25], target: [0, 0.82, 0] },
-        { name: '08_can_canh_ao.png', pos: [0, 0.52, 1.6], target: [0, 0.50, 0] },
-        { name: '09_can_canh_giay.png', pos: [0, 0.22, 1.8], target: [0, 0.20, 0] },
+        { name: '07_can_canh_mu.png', pos: [0, H * 0.90, 1.35 * (H / 1.0)], target: [0, H * 0.88, 0] },
+        { name: '08_can_canh_ao.png', pos: [0, H * 0.62, 1.65 * (H / 1.0)], target: [0, H * 0.60, 0] },
+        { name: '09_can_canh_giay.png', pos: [0, H * 0.22, 1.5 * (H / 1.0)], target: [0, H * 0.12, 0] },
       ];
 
       const images = [];
@@ -1117,15 +1121,17 @@ document.querySelectorAll('.btn-cam').forEach((btn) => {
     document.querySelectorAll('.btn-cam').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     const p = btn.dataset.cam;
-    const dist = 3.8;
-    const ty = 0.52;
+    const H = character?.totalHeight || 1.0;
+    const dist = 3.0 + H * 1.0;
+    const ty = H * 0.52;
     if (p === 'side') { camera.position.set(dist, ty, 0.001); controls.target.set(0, ty, 0); }
-    else if (p === 'q') { camera.position.set(dist * 0.65, ty + 0.35, dist * 0.75); controls.target.set(0, ty, 0); }
+    else if (p === 'q') { camera.position.set(dist * 0.65, ty + 0.35 * (H / 1.0), dist * 0.75); controls.target.set(0, ty, 0); }
     else if (p === 'back') { camera.position.set(0, ty, -dist); controls.target.set(0, ty, 0); }
-    else if (p === 'head') { camera.position.set(0, 0.85, 1.25); controls.target.set(0, 0.82, 0); }
-    else if (p === 'torso') { camera.position.set(0, 0.52, 1.6); controls.target.set(0, 0.50, 0); }
-    else if (p === 'legs') { camera.position.set(0, 0.22, 1.8); controls.target.set(0, 0.20, 0); }
+    else if (p === 'head') { camera.position.set(0, H * 0.90, 1.35 * (H / 1.0)); controls.target.set(0, H * 0.88, 0); }
+    else if (p === 'torso') { camera.position.set(0, H * 0.62, 1.65 * (H / 1.0)); controls.target.set(0, H * 0.60, 0); }
+    else if (p === 'legs') { camera.position.set(0, H * 0.22, 1.5 * (H / 1.0)); controls.target.set(0, H * 0.12, 0); }
     else { camera.position.set(0, ty, dist); controls.target.set(0, ty, 0); }
+    controls.update();
   });
 });
 
